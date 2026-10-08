@@ -384,6 +384,7 @@ class AudOscAdapter {
     AudTimestamp at,
   ) {
     final args = _Args(message);
+    if (target is AudInletTarget) args.port = target.port;
     return switch ((target, verb)) {
       (AudParamTarget t, null) => [
         AudSetParamCommand(

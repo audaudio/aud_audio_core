@@ -14,6 +14,7 @@ void main() {
     params: [AudParamDescriptor(id: 'gain', max: 2, defaultValue: 1)],
     eventInputs: [
       AudEventPortDescriptor(id: 'events', control: true, midi: true),
+      AudEventPortDescriptor(id: 'midi', midi: true),
     ],
     eventOutputs: [AudEventPortDescriptor(id: 'out')],
     stringKeys: [AudStringKeyDescriptor(key: 4, id: 'file')],
@@ -39,11 +40,13 @@ void main() {
         '/graph/1/node/2',
         '/graph/1/node/2/param/gain',
         '/graph/1/node/2/inlet/events',
+        '/graph/1/node/2/inlet/midi',
         '/graph/1/node/2/outlet/out',
         '/graph/1/node/2/string/file',
         '/graph/1/node/3',
         '/graph/1/node/3/param/gain',
         '/graph/1/node/3/inlet/events',
+        '/graph/1/node/3/inlet/midi',
         '/graph/1/node/3/outlet/out',
         '/graph/1/node/3/string/file',
       ]);
@@ -154,6 +157,12 @@ void main() {
           AudEventCommand(
             node: 20,
             event: AudControlEvent(control: 7, value: AudImpulse.instance),
+          ),
+        ],
+        AudOscMessage('/graph/1/node/2/inlet/midi/note', [60, 1.0]): [
+          AudEventCommand(
+            node: 20,
+            event: AudUmpEvent(Ump([0x20903C7F]), port: 1),
           ),
         ],
         AudOscMessage('/graph/1/node/2/cancel'): [

@@ -94,6 +94,14 @@ void main() {
         throwsArgumentError,
       );
       expect(
+        () => adapter.process(
+          input: [Float32List(2), Float32List(2)],
+          output: [Float32List(1), Float32List(2)],
+          renderBlock: (_, _) {},
+        ),
+        throwsArgumentError,
+      );
+      expect(
         () => AudFixedBlockAdapter(blockSize: 0, channels: 1),
         throwsArgumentError,
       );

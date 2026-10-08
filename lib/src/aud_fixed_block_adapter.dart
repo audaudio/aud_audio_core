@@ -62,6 +62,10 @@ class AudFixedBlockAdapter {
       throw ArgumentError('input and output need $channels channels');
     }
     final frames = input.first.length;
+    if (input.any((c) => c.length != frames) ||
+        output.any((c) => c.length != frames)) {
+      throw ArgumentError('every channel needs $frames frames');
+    }
     final inPointers = calloc<Pointer<Float>>(channels);
     final outPointers = calloc<Pointer<Float>>(channels);
     try {

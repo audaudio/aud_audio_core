@@ -72,6 +72,13 @@ void main() {
       expect(filter.resets, 1);
     });
 
+    test('keeps the nominal rate when the host clock runs backwards', () {
+      filter.deviationLimitNs = 1 << 40;
+      filter.add(samplePosition: 0, frames: 256, hostTimeNs: 1000000);
+      filter.add(samplePosition: 256, frames: 256, hostTimeNs: 0);
+      expect(filter.nsPerSample, closeTo(1e9 / 48000, 1e-9));
+    });
+
     test('reset() forgets the points and dispose() closes it', () {
       filter.add(samplePosition: 0, frames: 256, hostTimeNs: 0);
       filter.reset();

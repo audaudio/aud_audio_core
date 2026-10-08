@@ -124,7 +124,11 @@ static inline void aud_time_filter_fit(AudTimeFilter* filter) {
   }
   const double denominator = (double)n * sxx - sx * sx;
   double slope = filter->nominal_ns_per_sample;
-  if (n >= 2 && denominator > 0) slope = ((double)n * sxy - sx * sy) / denominator;
+  if (n >= 2 && denominator > 0) {
+    const double fitted = ((double)n * sxy - sx * sy) / denominator;
+    // A non-positive slope means a clock running backwards; keep nominal.
+    if (fitted > 0) slope = fitted;
+  }
   // The line runs through the mean point.
   const double mean_x = sx / (double)n;
   const double mean_y = sy / (double)n;
