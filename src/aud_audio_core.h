@@ -1,30 +1,39 @@
+// @license
+// Copyright (c) Audanika. All Rights Reserved.
+//
+// Use of this source code is governed by terms that can be
+// found in the LICENSE file in the root of this package.
+
+// The native entry points of aud_audio_core: the ABI version and the struct
+// sizes, so that the Dart side can check that it agrees with the C side.
+
+#ifndef AUD_AUDIO_CORE_H
+#define AUD_AUDIO_CORE_H
+
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#if _WIN32
-#include <windows.h>
-#else
-#include <pthread.h>
-#include <unistd.h>
+#include "aud_abi.h"
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#if _WIN32
-#define FFI_PLUGIN_EXPORT __declspec(dllexport)
-#else
-#define FFI_PLUGIN_EXPORT
+// The major ABI version compiled into the native core.
+AUD_EXPORT int32_t aud_abi_version_major(void);
+
+// The minor ABI version compiled into the native core.
+AUD_EXPORT int32_t aud_abi_version_minor(void);
+
+// sizeof the ABI structs as the C compiler lays them out.
+AUD_EXPORT int32_t aud_abi_sizeof_event(void);
+AUD_EXPORT int32_t aud_abi_sizeof_param_descriptor(void);
+AUD_EXPORT int32_t aud_abi_sizeof_process_context(void);
+AUD_EXPORT int32_t aud_abi_sizeof_node_vtable(void);
+AUD_EXPORT int32_t aud_abi_sizeof_node_descriptor(void);
+AUD_EXPORT int32_t aud_abi_sizeof_host_api(void);
+
+#ifdef __cplusplus
+}
 #endif
 
-// A very short-lived native function.
-//
-// For very short-lived functions, it is fine to call them on the main isolate.
-// They will block the Dart execution while running the native function, so
-// only do this for native functions which are guaranteed to be short-lived.
-FFI_PLUGIN_EXPORT intptr_t sum(intptr_t a, intptr_t b);
-
-// A longer lived native function, which occupies the thread calling it.
-//
-// Do not call these kind of native functions in the main isolate. They will
-// block Dart execution. This will cause dropped frames in Flutter applications.
-// Instead, call these native functions on a separate isolate.
-FFI_PLUGIN_EXPORT intptr_t sum_long_running(intptr_t a, intptr_t b);
+#endif  // AUD_AUDIO_CORE_H

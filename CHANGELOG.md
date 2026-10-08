@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Seed the C ABI and the Dart contracts
+
 ## 0.0.2 - 2026-10-08
 
 ### Added
