@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://audaudio.github.io/schemas/aud_node_preset.schema.json",
+  "title": "Audanika Audio Engine node preset",
+  "description": "The parameter values, string settings and state blob of one node of the Audanika Audio Engine.",
+  "type": "object",
+  "required": [
+    "schema",
+    "type"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "description": "The version of this schema.",
+      "const": 1
+    },
+    "type": {
+      "description": "The type id of the node, e.g. aud.core.gain.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+    },
+    "name": {
+      "description": "The name of the preset.",
+      "type": "string"
+    },
+    "nodeVersion": {
+      "description": "The version of the node type the preset was saved from.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "params": {
+      "description": "Parameter values by parameter id.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "strings": {
+      "description": "String settings by string key id.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "state": {
+      "description": "The state blob of the node, base64.",
+      "type": "string",
+      "contentEncoding": "base64"
+    },
+    "stateVersion": {
+      "description": "The version of the state blob.",
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "dependentRequired": {
+    "state": [
+      "stateVersion"
+    ]
+  }
+}

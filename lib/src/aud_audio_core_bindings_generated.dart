@@ -13,24 +13,21 @@
 // ignore_for_file: type=lint, unused_import, unused_element, deprecated_member_use_from_same_package
 import 'dart:ffi' as ffi;
 
-/// sizeof the ABI structs as the C compiler lays them out.
-@ffi.Native<ffi.Int32 Function()>()
-external int aud_abi_sizeof_event();
+/// aud_abi_is_compatible of aud_abi.h as an exported function.
+@ffi.Native<
+  ffi.Int32 Function(ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32)
+>()
+external int aud_abi_compatible(
+  int package_major,
+  int package_minor,
+  int engine_major,
+  int engine_minor,
+);
 
-@ffi.Native<ffi.Int32 Function()>()
-external int aud_abi_sizeof_host_api();
-
-@ffi.Native<ffi.Int32 Function()>()
-external int aud_abi_sizeof_node_descriptor();
-
-@ffi.Native<ffi.Int32 Function()>()
-external int aud_abi_sizeof_node_vtable();
-
-@ffi.Native<ffi.Int32 Function()>()
-external int aud_abi_sizeof_param_descriptor();
-
-@ffi.Native<ffi.Int32 Function()>()
-external int aud_abi_sizeof_process_context();
+/// sizeof an ABI struct by its name, e.g. "AudEvent", as the C compiler
+/// lays it out; -1 for an unknown name.
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<ffi.Char>)>()
+external int aud_abi_sizeof(ffi.Pointer<ffi.Char> struct_name);
 
 /// The major ABI version compiled into the native core.
 @ffi.Native<ffi.Int32 Function()>()
@@ -40,13 +37,350 @@ external int aud_abi_version_major();
 @ffi.Native<ffi.Int32 Function()>()
 external int aud_abi_version_minor();
 
+/// Registers `aud.core.gain` with the host: a gain with a ramped parameter
+/// built on AudNodeBase, the proof of the base class and the pattern every
+/// DSP package follows. AUD_OK or an error code.
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<AudHostApi>)>()
+external int aud_audio_core_register(ffi.Pointer<AudHostApi> host);
+
+/// The monotonic host time in nanoseconds, aud_clock_now_ns of aud_clock.h.
+@ffi.Native<ffi.Int64 Function()>()
+external int aud_core_clock_now_ns();
+
+@ffi.Native<
+  ffi.Pointer<AudCoreFixedBlockAdapter> Function(ffi.Uint32, ffi.Uint32)
+>()
+external ffi.Pointer<AudCoreFixedBlockAdapter>
+aud_core_fixed_block_adapter_create(int block_size, int channels);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<AudCoreFixedBlockAdapter>)>()
+external void aud_core_fixed_block_adapter_destroy(
+  ffi.Pointer<AudCoreFixedBlockAdapter> adapter,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<AudCoreFixedBlockAdapter>)>()
+external int aud_core_fixed_block_adapter_latency(
+  ffi.Pointer<AudCoreFixedBlockAdapter> adapter,
+);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<AudCoreFixedBlockAdapter>,
+    ffi.Pointer<ffi.Pointer<ffi.Float>>,
+    ffi.Pointer<ffi.Pointer<ffi.Float>>,
+    ffi.Uint32,
+    AudCoreRenderBlockFunction,
+    ffi.Pointer<ffi.Void>,
+  )
+>()
+external void aud_core_fixed_block_adapter_process(
+  ffi.Pointer<AudCoreFixedBlockAdapter> adapter,
+  ffi.Pointer<ffi.Pointer<ffi.Float>> in$,
+  ffi.Pointer<ffi.Pointer<ffi.Float>> out,
+  int frames,
+  AudCoreRenderBlockFunction render,
+  ffi.Pointer<ffi.Void> user,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<AudCoreFixedBlockAdapter>)>()
+external void aud_core_fixed_block_adapter_reset(
+  ffi.Pointer<AudCoreFixedBlockAdapter> adapter,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<AudCoreParamRamp>, ffi.Uint32)>()
+external void aud_core_param_ramp_advance(
+  ffi.Pointer<AudCoreParamRamp> ramp,
+  int frames,
+);
+
+@ffi.Native<ffi.Pointer<AudCoreParamRamp> Function(ffi.Float)>()
+external ffi.Pointer<AudCoreParamRamp> aud_core_param_ramp_create(double value);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<AudCoreParamRamp>)>()
+external void aud_core_param_ramp_destroy(ffi.Pointer<AudCoreParamRamp> ramp);
+
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<AudCoreParamRamp>)>()
+external int aud_core_param_ramp_is_ramping(ffi.Pointer<AudCoreParamRamp> ramp);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<AudCoreParamRamp>)>()
+external int aud_core_param_ramp_remaining(ffi.Pointer<AudCoreParamRamp> ramp);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<AudCoreParamRamp>, ffi.Float)>()
+external void aud_core_param_ramp_set(
+  ffi.Pointer<AudCoreParamRamp> ramp,
+  double value,
+);
+
+@ffi.Native<
+  ffi.Void Function(ffi.Pointer<AudCoreParamRamp>, ffi.Float, ffi.Uint32)
+>()
+external void aud_core_param_ramp_set_target(
+  ffi.Pointer<AudCoreParamRamp> ramp,
+  double target,
+  int frames,
+);
+
+@ffi.Native<ffi.Float Function(ffi.Pointer<AudCoreParamRamp>)>()
+external double aud_core_param_ramp_target(ffi.Pointer<AudCoreParamRamp> ramp);
+
+@ffi.Native<ffi.Float Function(ffi.Pointer<AudCoreParamRamp>)>()
+external double aud_core_param_ramp_value(ffi.Pointer<AudCoreParamRamp> ramp);
+
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<AudCoreTimeFilter>,
+    ffi.Int64,
+    ffi.Uint32,
+    ffi.Int64,
+  )
+>()
+external int aud_core_time_filter_add(
+  ffi.Pointer<AudCoreTimeFilter> filter,
+  int sample_position,
+  int frames,
+  int host_time_ns,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<AudCoreTimeFilter>)>()
+external int aud_core_time_filter_count(ffi.Pointer<AudCoreTimeFilter> filter);
+
+@ffi.Native<ffi.Pointer<AudCoreTimeFilter> Function(ffi.Double, ffi.Uint32)>()
+external ffi.Pointer<AudCoreTimeFilter> aud_core_time_filter_create(
+  double sample_rate,
+  int window,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<AudCoreTimeFilter>)>()
+external void aud_core_time_filter_destroy(
+  ffi.Pointer<AudCoreTimeFilter> filter,
+);
+
+@ffi.Native<ffi.Int64 Function(ffi.Pointer<AudCoreTimeFilter>, ffi.Int64)>()
+external int aud_core_time_filter_host_time_at(
+  ffi.Pointer<AudCoreTimeFilter> filter,
+  int sample_position,
+);
+
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<AudCoreTimeFilter>)>()
+external int aud_core_time_filter_is_valid(
+  ffi.Pointer<AudCoreTimeFilter> filter,
+);
+
+@ffi.Native<ffi.Double Function(ffi.Pointer<AudCoreTimeFilter>)>()
+external double aud_core_time_filter_ns_per_sample(
+  ffi.Pointer<AudCoreTimeFilter> filter,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<AudCoreTimeFilter>)>()
+external void aud_core_time_filter_reset(ffi.Pointer<AudCoreTimeFilter> filter);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Pointer<AudCoreTimeFilter>)>()
+external int aud_core_time_filter_resets(ffi.Pointer<AudCoreTimeFilter> filter);
+
+@ffi.Native<ffi.Int64 Function(ffi.Pointer<AudCoreTimeFilter>, ffi.Int64)>()
+external int aud_core_time_filter_sample_at(
+  ffi.Pointer<AudCoreTimeFilter> filter,
+  int host_time_ns,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<AudCoreTimeFilter>, ffi.Int64)>()
+external void aud_core_time_filter_set_deviation_limit(
+  ffi.Pointer<AudCoreTimeFilter> filter,
+  int limit_ns,
+);
+
+/// ............................................................................
+/// Transport conversions (aud_transport.h)
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<AudTransportSnapshot>,
+    ffi.Uint32,
+    ffi.Pointer<ffi.Int64>,
+  )
+>()
+external int aud_core_transport_beat_at_offset(
+  ffi.Pointer<AudTransportSnapshot> snapshot,
+  int sample_offset,
+  ffi.Pointer<ffi.Int64> beat,
+);
+
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<AudTransportSnapshot>,
+    ffi.Uint32,
+    ffi.Pointer<ffi.Int64>,
+  )
+>()
+external int aud_core_transport_host_time_at_offset(
+  ffi.Pointer<AudTransportSnapshot> snapshot,
+  int sample_offset,
+  ffi.Pointer<ffi.Int64> host_time_ns,
+);
+
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<AudTransportSnapshot>,
+    ffi.Int64,
+    ffi.Pointer<ffi.Int64>,
+  )
+>()
+external int aud_core_transport_offset_at_beat(
+  ffi.Pointer<AudTransportSnapshot> snapshot,
+  int beat,
+  ffi.Pointer<ffi.Int64> offset,
+);
+
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<AudTransportSnapshot>,
+    ffi.Int64,
+    ffi.Pointer<ffi.Int64>,
+  )
+>()
+external int aud_core_transport_offset_at_host_time(
+  ffi.Pointer<AudTransportSnapshot> snapshot,
+  int host_time_ns,
+  ffi.Pointer<ffi.Int64> offset,
+);
+
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<AudTransportSnapshot>,
+    ffi.Pointer<AudTimestamp>,
+    ffi.Pointer<ffi.Int64>,
+  )
+>()
+external int aud_core_transport_resolve(
+  ffi.Pointer<AudTransportSnapshot> snapshot,
+  ffi.Pointer<AudTimestamp> timestamp,
+  ffi.Pointer<ffi.Int64> offset,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Uint32)>()
+external int aud_core_ump_channel(int word0);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Uint32)>()
+external int aud_core_ump_group(int word0);
+
+@ffi.Native<ffi.Int32 Function(ffi.Uint32, ffi.Uint32)>()
+external int aud_core_ump_is_note_off(int word0, int word1);
+
+@ffi.Native<ffi.Int32 Function(ffi.Uint32, ffi.Uint32)>()
+external int aud_core_ump_is_note_on(int word0, int word1);
+
+@ffi.Native<ffi.Int32 Function(ffi.Uint32)>()
+external int aud_core_ump_is_per_note_controller(int word0);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Uint32)>()
+external int aud_core_ump_message_type(int word0);
+
+@ffi.Native<
+  ffi.Uint32 Function(ffi.Uint32, ffi.Uint32, ffi.Uint32, ffi.Uint32)
+>()
+external int aud_core_ump_midi1_word(
+  int group,
+  int status_byte,
+  int data1,
+  int data2,
+);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Uint32,
+    ffi.Uint32,
+    ffi.Int32,
+    ffi.Uint32,
+    ffi.Uint32,
+    ffi.Uint32,
+    ffi.Uint32,
+    ffi.Pointer<ffi.Uint32>,
+  )
+>()
+external void aud_core_ump_midi2_note(
+  int group,
+  int channel,
+  int note_on,
+  int note,
+  int velocity16,
+  int attribute_type,
+  int attribute16,
+  ffi.Pointer<ffi.Uint32> words,
+);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Uint32,
+    ffi.Uint32,
+    ffi.Uint32,
+    ffi.Uint32,
+    ffi.Uint32,
+    ffi.Pointer<ffi.Uint32>,
+  )
+>()
+external void aud_core_ump_midi2_per_note_controller(
+  int group,
+  int channel,
+  int note,
+  int index,
+  int value32,
+  ffi.Pointer<ffi.Uint32> words,
+);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Uint32)>()
+external int aud_core_ump_note(int word0);
+
+@ffi.Native<ffi.Float Function(ffi.Uint32, ffi.Uint32)>()
+external double aud_core_ump_note_velocity(int word0, int word1);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Uint32)>()
+external int aud_core_ump_per_note_controller_index(int word0);
+
+@ffi.Native<ffi.Uint32 Function(ffi.Uint32)>()
+external int aud_core_ump_status(int word0);
+
+@ffi.Native<ffi.Float Function(ffi.Uint32)>()
+external double aud_core_ump_unit_value(int word1);
+
+/// ............................................................................
+/// UMP helpers (aud_ump.h)
+@ffi.Native<ffi.Uint32 Function(ffi.Uint32)>()
+external int aud_core_ump_word_count(int word0);
+
 const int AUD_ABI_VERSION_MAJOR = 0;
 
-const int AUD_ABI_VERSION_MINOR = 1;
+const int AUD_ABI_VERSION_MINOR = 2;
+
+const int AUD_ARG_FALSE = 70;
+
+const int AUD_ARG_FLOAT = 102;
+
+const int AUD_ARG_IMPULSE = 73;
+
+const int AUD_ARG_INT32 = 105;
+
+const int AUD_ARG_NIL = 78;
+
+const int AUD_ARG_TRUE = 84;
+
+const int AUD_BEAT_FACTOR = 2147483648;
+
+const int AUD_BUS_MAIN = 1;
+
+const int AUD_BUS_OPTIONAL = 4;
+
+const int AUD_BUS_SIDECHAIN = 2;
+
+const int AUD_CORE_GAIN_PARAM_GAIN = 0;
+
+const int AUD_CORE_GAIN_STATE_VERSION = 1;
+
+const String AUD_CORE_GAIN_TYPE_ID = 'aud.core.gain';
 
 const int AUD_ERROR_ABI_MAJOR = -2;
 
 const int AUD_ERROR_ABI_MINOR = -3;
+
+const int AUD_ERROR_BUFFER_TOO_SMALL = -11;
 
 const int AUD_ERROR_DUPLICATE_TYPE = -4;
 
@@ -54,19 +388,33 @@ const int AUD_ERROR_FAILED = -9;
 
 const int AUD_ERROR_INVALID_ARGUMENT = -1;
 
+const int AUD_ERROR_LATE = -13;
+
+const int AUD_ERROR_NOT_FOUND = -14;
+
 const int AUD_ERROR_OUT_OF_MEMORY = -7;
 
 const int AUD_ERROR_QUEUE_FULL = -6;
 
 const int AUD_ERROR_STATE = -8;
 
+const int AUD_ERROR_STATE_VERSION = -12;
+
 const int AUD_ERROR_UNKNOWN_TYPE = -5;
 
-const int AUD_EVENT_CONTROL = 3;
+const int AUD_ERROR_UNSUPPORTED = -10;
 
-const int AUD_EVENT_NOTE_OFF = 2;
+const int AUD_EVENT_CONTROL = 2;
 
-const int AUD_EVENT_NOTE_ON = 1;
+const int AUD_EVENT_FLAG_LIVE = 1;
+
+const int AUD_EVENT_PARAM = 3;
+
+const int AUD_EVENT_PORT_CONTROL = 2;
+
+const int AUD_EVENT_PORT_MIDI = 1;
+
+const int AUD_EVENT_UMP = 1;
 
 const int AUD_LOG_DEBUG = 0;
 
@@ -78,19 +426,206 @@ const int AUD_LOG_WARNING = 2;
 
 const int AUD_NODE_CAP_EVENTS = 4;
 
+const int AUD_NODE_CAP_EVENT_OUTPUT = 256;
+
 const int AUD_NODE_CAP_IN_PLACE = 1;
 
+const int AUD_NODE_CAP_LATENCY = 32;
+
+const int AUD_NODE_CAP_RESET_ON_SEEK = 1024;
+
+const int AUD_NODE_CAP_RESET_ON_STOP = 512;
+
+const int AUD_NODE_CAP_STATE = 16;
+
 const int AUD_NODE_CAP_STRINGS = 8;
+
+const int AUD_NODE_CAP_TAIL = 64;
+
+const int AUD_NODE_CAP_TRANSPORT = 128;
 
 const int AUD_NODE_CAP_VARIABLE_BLOCK = 2;
 
 const int AUD_OK = 0;
 
+const int AUD_PARAM_AUTOMATABLE = 1;
+
+const int AUD_PARAM_BOOLEAN = 16;
+
+const int AUD_PARAM_HIDDEN = 32;
+
+const int AUD_PARAM_LOGARITHMIC = 8;
+
+const int AUD_PARAM_RAMPED = 2;
+
+const int AUD_PARAM_STEPPED = 4;
+
+const int AUD_PENDING = 1;
+
+const int AUD_PROCESS_OFFLINE = 1;
+
+const int AUD_RESET_PREPARE = 2;
+
+const int AUD_RESET_RECOVERY = 3;
+
+const int AUD_RESET_SEEK = 1;
+
+const int AUD_RESET_STOP = 0;
+
+const int AUD_SEGMENT_DISCONTINUITY = 8;
+
+const int AUD_SEGMENT_LOOPING = 2;
+
+const int AUD_SEGMENT_PLAYING = 1;
+
+const int AUD_SEGMENT_SEEK = 4;
+
+const int AUD_TAIL_INFINITE = 4294967295;
+
 const int AUD_THREAD_CONTROL = 0;
+
+const int AUD_THREAD_OFFLINE = 2;
 
 const int AUD_THREAD_REALTIME = 1;
 
-/// An event delivered to a node before the block it belongs to.
+const int AUD_TIME_BEAT = 3;
+
+const int AUD_TIME_HOST = 2;
+
+const int AUD_TIME_IMMEDIATE = 0;
+
+const int AUD_TIME_SAMPLE = 1;
+
+const int AUD_TIME_SOURCE_ESTIMATED = 2;
+
+const int AUD_TIME_SOURCE_HARDWARE = 1;
+
+const int AUD_TIME_SOURCE_NONE = 0;
+
+const int AUD_TIME_SOURCE_SYNTHESIZED = 3;
+
+const int AUD_TRANSPORT_CAP_HOST_TIME = 16;
+
+const int AUD_TRANSPORT_CAP_LOOP = 32;
+
+const int AUD_TRANSPORT_CAP_SEEK = 2;
+
+const int AUD_TRANSPORT_CAP_START_STOP = 4;
+
+const int AUD_TRANSPORT_CAP_TEMPO = 1;
+
+const int AUD_TRANSPORT_CAP_TIME_SIGNATURE = 8;
+
+const int AUD_TRANSPORT_REQUEST_SEEK = 3;
+
+const int AUD_TRANSPORT_REQUEST_SET_LOOP = 6;
+
+const int AUD_TRANSPORT_REQUEST_SET_QUANTUM = 7;
+
+const int AUD_TRANSPORT_REQUEST_SET_TEMPO = 4;
+
+const int AUD_TRANSPORT_REQUEST_SET_TIME_SIGNATURE = 5;
+
+const int AUD_TRANSPORT_REQUEST_START = 1;
+
+const int AUD_TRANSPORT_REQUEST_STOP = 2;
+
+/// A bus of planar audio: one float array per channel.
+final class AudAudioBus extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  @ffi.Uint32()
+  external int num_channels;
+
+  external ffi.Pointer<ffi.Pointer<ffi.Float>> channels;
+
+  static ffi.Pointer<AudAudioBus> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required int num_channels,
+    required ffi.Pointer<ffi.Pointer<ffi.Float>> channels,
+  }) => $allocator<AudAudioBus>()
+    ..ref.struct_size = struct_size
+    ..ref.num_channels = num_channels
+    ..ref.channels = channels;
+}
+
+/// An audio bus of a node type: a range of channel counts the node accepts.
+final class AudBusDescriptor extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  /// stable identifier, e.g. "in"
+  external ffi.Pointer<ffi.Char> id;
+
+  /// display name
+  external ffi.Pointer<ffi.Char> name;
+
+  /// AUD_BUS_*
+  @ffi.Uint32()
+  external int flags;
+
+  @ffi.Uint32()
+  external int min_channels;
+
+  @ffi.Uint32()
+  external int max_channels;
+
+  @ffi.Uint32()
+  external int default_channels;
+
+  static ffi.Pointer<AudBusDescriptor> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required ffi.Pointer<ffi.Char> id,
+    required ffi.Pointer<ffi.Char> name,
+    required int flags,
+    required int min_channels,
+    required int max_channels,
+    required int default_channels,
+  }) => $allocator<AudBusDescriptor>()
+    ..ref.struct_size = struct_size
+    ..ref.id = id
+    ..ref.name = name
+    ..ref.flags = flags
+    ..ref.min_channels = min_channels
+    ..ref.max_channels = max_channels
+    ..ref.default_channels = default_channels;
+}
+
+/// ............................................................................
+/// The fixed-block adapter (aud_fixed_block_adapter.hpp)
+final class AudCoreFixedBlockAdapter extends ffi.Opaque {}
+
+/// ............................................................................
+/// The parameter ramp (aud_param_ramp.hpp)
+final class AudCoreParamRamp extends ffi.Opaque {}
+
+/// Renders one fixed block of `block_size` frames from `in` to `out`.
+typedef AudCoreRenderBlockFunction =
+    ffi.Pointer<ffi.NativeFunction<AudCoreRenderBlockFunctionFunction>>;
+typedef AudCoreRenderBlockFunctionFunction =
+    ffi.Void Function(
+      ffi.Pointer<ffi.Void> user,
+      ffi.Pointer<ffi.Pointer<ffi.Float>> in$,
+      ffi.Pointer<ffi.Pointer<ffi.Float>> out,
+      ffi.Uint32 block_size,
+    );
+typedef DartAudCoreRenderBlockFunctionFunction =
+    void Function(
+      ffi.Pointer<ffi.Void> user,
+      ffi.Pointer<ffi.Pointer<ffi.Float>> in$,
+      ffi.Pointer<ffi.Pointer<ffi.Float>> out,
+      int block_size,
+    );
+
+/// ............................................................................
+/// The time filter (aud_time_filter.h)
+final class AudCoreTimeFilter extends ffi.Opaque {}
+
+/// An event inside a block: a UMP, a control or a parameter event at a
+/// sample offset on an event port of the node.
 final class AudEvent extends ffi.Struct {
   @ffi.Uint32()
   external int struct_size;
@@ -99,37 +634,54 @@ final class AudEvent extends ffi.Struct {
   @ffi.Uint32()
   external int type;
 
-  /// offset inside the block; the spike applies 0
+  /// offset inside the block
   @ffi.Uint32()
   external int sample_offset;
 
-  /// MIDI channel 0..15
+  /// index of the event input of the node
   @ffi.Uint32()
-  external int channel;
+  external int port;
 
-  /// note number or controller number
+  /// AUD_EVENT_FLAG_*
   @ffi.Uint32()
-  external int number;
+  external int flags;
 
-  /// velocity 0..1 or controller value
-  @ffi.Float()
-  external double value;
+  /// the payload, see the event types
+  @ffi.Array.multi([4])
+  external ffi.Array<ffi.Uint32> words;
+}
 
-  static ffi.Pointer<AudEvent> $allocate(
+/// An event port of a node type.
+final class AudEventPortDescriptor extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  /// stable identifier, e.g. "midi"
+  external ffi.Pointer<ffi.Char> id;
+
+  /// display name
+  external ffi.Pointer<ffi.Char> name;
+
+  /// AUD_EVENT_PORT_*
+  @ffi.Uint32()
+  external int flags;
+
+  @ffi.Uint32()
+  external int reserved;
+
+  static ffi.Pointer<AudEventPortDescriptor> $allocate(
     ffi.Allocator $allocator, {
     required int struct_size,
-    required int type,
-    required int sample_offset,
-    required int channel,
-    required int number,
-    required double value,
-  }) => $allocator<AudEvent>()
+    required ffi.Pointer<ffi.Char> id,
+    required ffi.Pointer<ffi.Char> name,
+    required int flags,
+    required int reserved,
+  }) => $allocator<AudEventPortDescriptor>()
     ..ref.struct_size = struct_size
-    ..ref.type = type
-    ..ref.sample_offset = sample_offset
-    ..ref.channel = channel
-    ..ref.number = number
-    ..ref.value = value;
+    ..ref.id = id
+    ..ref.name = name
+    ..ref.flags = flags
+    ..ref.reserved = reserved;
 }
 
 /// What the engine offers a package. Memory crossing the ABI is owned by the
@@ -145,6 +697,10 @@ final class AudHostApi extends ffi.Struct {
   @ffi.Uint32()
   external int abi_minor;
 
+  /// the oldest package minor the engine accepts
+  @ffi.Uint32()
+  external int abi_oldest_minor;
+
   /// opaque engine handle, passed back to every callback
   external ffi.Pointer<ffi.Void> host;
 
@@ -159,7 +715,20 @@ final class AudHostApi extends ffi.Struct {
   >
   register_node_type;
 
-  /// [control] Allocates memory for non-realtime work.
+  /// [control] Registers a transport provider under an id, e.g.
+  /// "aud.link"; AUD_OK or an error code.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int32 Function(
+        ffi.Pointer<ffi.Void> host,
+        ffi.Pointer<ffi.Char> id,
+        ffi.Pointer<AudTransportProviderVTable> vtable,
+      )
+    >
+  >
+  register_transport_provider;
+
+  /// [control, offline] Allocates memory for non-realtime work.
   external ffi.Pointer<
     ffi.NativeFunction<
       ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void> host, ffi.Size bytes)
@@ -167,7 +736,7 @@ final class AudHostApi extends ffi.Struct {
   >
   alloc;
 
-  /// [control] Frees memory from alloc.
+  /// [control, offline] Frees memory from alloc.
   external ffi.Pointer<
     ffi.NativeFunction<
       ffi.Void Function(
@@ -178,7 +747,7 @@ final class AudHostApi extends ffi.Struct {
   >
   free;
 
-  /// [control] Logs a message; never called on the realtime thread.
+  /// [control, offline] Logs a message; never called on the realtime thread.
   external ffi.Pointer<
     ffi.NativeFunction<
       ffi.Void Function(
@@ -190,11 +759,25 @@ final class AudHostApi extends ffi.Struct {
   >
   log;
 
+  /// [realtime] Emits an event on an event output of the instance; only for
+  /// nodes with AUD_NODE_CAP_EVENT_OUTPUT. `event->port` names the output.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<ffi.Void> host,
+        ffi.Pointer<ffi.Void> instance,
+        ffi.Pointer<AudEvent> event,
+      )
+    >
+  >
+  emit_event;
+
   static ffi.Pointer<AudHostApi> $allocate(
     ffi.Allocator $allocator, {
     required int struct_size,
     required int abi_major,
     required int abi_minor,
+    required int abi_oldest_minor,
     required ffi.Pointer<ffi.Void> host,
     required ffi.Pointer<
       ffi.NativeFunction<
@@ -205,6 +788,16 @@ final class AudHostApi extends ffi.Struct {
       >
     >
     register_node_type,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int32 Function(
+          ffi.Pointer<ffi.Void> host,
+          ffi.Pointer<ffi.Char> id,
+          ffi.Pointer<AudTransportProviderVTable> vtable,
+        )
+      >
+    >
+    register_transport_provider,
     required ffi.Pointer<
       ffi.NativeFunction<
         ffi.Pointer<ffi.Void> Function(
@@ -233,15 +826,28 @@ final class AudHostApi extends ffi.Struct {
       >
     >
     log,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<ffi.Void> host,
+          ffi.Pointer<ffi.Void> instance,
+          ffi.Pointer<AudEvent> event,
+        )
+      >
+    >
+    emit_event,
   }) => $allocator<AudHostApi>()
     ..ref.struct_size = struct_size
     ..ref.abi_major = abi_major
     ..ref.abi_minor = abi_minor
+    ..ref.abi_oldest_minor = abi_oldest_minor
     ..ref.host = host
     ..ref.register_node_type = register_node_type
+    ..ref.register_transport_provider = register_transport_provider
     ..ref.alloc = alloc
     ..ref.free = free
-    ..ref.log = log;
+    ..ref.log = log
+    ..ref.emit_event = emit_event;
 }
 
 /// A node type a package registers.
@@ -256,28 +862,56 @@ final class AudNodeDescriptor extends ffi.Struct {
   @ffi.Uint32()
   external int abi_minor;
 
+  /// the version of the node type
+  @ffi.Uint32()
+  external int version;
+
   /// e.g. "aud.effects.tremolo"
   external ffi.Pointer<ffi.Char> type_id;
 
   /// display name
   external ffi.Pointer<ffi.Char> name;
 
+  /// e.g. "Audanika"
+  external ffi.Pointer<ffi.Char> vendor;
+
   /// AUD_NODE_CAP_* flags
   @ffi.Uint32()
   external int capabilities;
 
-  /// audio buses; 0 or 1 in the spike
+  /// version of the state blobs it writes
   @ffi.Uint32()
-  external int num_inputs;
+  external int state_version;
 
-  /// audio buses; 1 in the spike
   @ffi.Uint32()
-  external int num_outputs;
+  external int num_input_buses;
+
+  @ffi.Uint32()
+  external int num_output_buses;
+
+  external ffi.Pointer<AudBusDescriptor> input_buses;
+
+  external ffi.Pointer<AudBusDescriptor> output_buses;
+
+  @ffi.Uint32()
+  external int num_event_inputs;
+
+  @ffi.Uint32()
+  external int num_event_outputs;
+
+  external ffi.Pointer<AudEventPortDescriptor> event_inputs;
+
+  external ffi.Pointer<AudEventPortDescriptor> event_outputs;
 
   @ffi.Uint32()
   external int num_params;
 
+  @ffi.Uint32()
+  external int num_string_keys;
+
   external ffi.Pointer<AudParamDescriptor> params;
+
+  external ffi.Pointer<AudStringKeyDescriptor> string_keys;
 
   external ffi.Pointer<AudNodeVTable> vtable;
 
@@ -286,30 +920,53 @@ final class AudNodeDescriptor extends ffi.Struct {
     required int struct_size,
     required int abi_major,
     required int abi_minor,
+    required int version,
     required ffi.Pointer<ffi.Char> type_id,
     required ffi.Pointer<ffi.Char> name,
+    required ffi.Pointer<ffi.Char> vendor,
     required int capabilities,
-    required int num_inputs,
-    required int num_outputs,
+    required int state_version,
+    required int num_input_buses,
+    required int num_output_buses,
+    required ffi.Pointer<AudBusDescriptor> input_buses,
+    required ffi.Pointer<AudBusDescriptor> output_buses,
+    required int num_event_inputs,
+    required int num_event_outputs,
+    required ffi.Pointer<AudEventPortDescriptor> event_inputs,
+    required ffi.Pointer<AudEventPortDescriptor> event_outputs,
     required int num_params,
+    required int num_string_keys,
     required ffi.Pointer<AudParamDescriptor> params,
+    required ffi.Pointer<AudStringKeyDescriptor> string_keys,
     required ffi.Pointer<AudNodeVTable> vtable,
   }) => $allocator<AudNodeDescriptor>()
     ..ref.struct_size = struct_size
     ..ref.abi_major = abi_major
     ..ref.abi_minor = abi_minor
+    ..ref.version = version
     ..ref.type_id = type_id
     ..ref.name = name
+    ..ref.vendor = vendor
     ..ref.capabilities = capabilities
-    ..ref.num_inputs = num_inputs
-    ..ref.num_outputs = num_outputs
+    ..ref.state_version = state_version
+    ..ref.num_input_buses = num_input_buses
+    ..ref.num_output_buses = num_output_buses
+    ..ref.input_buses = input_buses
+    ..ref.output_buses = output_buses
+    ..ref.num_event_inputs = num_event_inputs
+    ..ref.num_event_outputs = num_event_outputs
+    ..ref.event_inputs = event_inputs
+    ..ref.event_outputs = event_outputs
     ..ref.num_params = num_params
+    ..ref.num_string_keys = num_string_keys
     ..ref.params = params
+    ..ref.string_keys = string_keys
     ..ref.vtable = vtable;
 }
 
 /// The functions of a node type. The tag in brackets names the calling
-/// thread.
+/// thread; an entry a node does not provide is NULL unless the capability
+/// requires it.
 final class AudNodeVTable extends ffi.Struct {
   @ffi.Uint32()
   external int struct_size;
@@ -331,27 +988,27 @@ final class AudNodeVTable extends ffi.Struct {
   >
   destroy;
 
-  /// [control] Prepares the instance for a sample rate, a largest block and a
-  /// channel count; called before the first process call and on every change.
+  /// [control] Prepares the instance; called before the first process call
+  /// and on every change of the sample rate, the block size or the buses.
   external ffi.Pointer<
     ffi.NativeFunction<
       ffi.Int32 Function(
         ffi.Pointer<ffi.Void> instance,
-        ffi.Double sample_rate,
-        ffi.Uint32 max_frames,
-        ffi.Uint32 channels,
+        ffi.Pointer<AudPrepareInfo> info,
       )
     >
   >
   prepare;
 
-  /// [realtime] Resets the state (stop, seek).
+  /// [realtime] Resets the state for a reason (AUD_RESET_*).
   external ffi.Pointer<
-    ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void> instance)>
+    ffi.NativeFunction<
+      ffi.Void Function(ffi.Pointer<ffi.Void> instance, ffi.Uint32 reason)
+    >
   >
   reset;
 
-  /// [realtime] Sets a parameter by its index in the descriptor.
+  /// [realtime] Sets a parameter immediately by its index in the descriptor.
   external ffi.Pointer<
     ffi.NativeFunction<
       ffi.Void Function(
@@ -362,17 +1019,6 @@ final class AudNodeVTable extends ffi.Struct {
     >
   >
   set_param;
-
-  /// [realtime] Delivers an event; NULL unless AUD_NODE_CAP_EVENTS is set.
-  external ffi.Pointer<
-    ffi.NativeFunction<
-      ffi.Void Function(
-        ffi.Pointer<ffi.Void> instance,
-        ffi.Pointer<AudEvent> event,
-      )
-    >
-  >
-  event;
 
   /// [realtime] Renders one block; no allocation, no lock, no I/O.
   external ffi.Pointer<
@@ -398,6 +1044,49 @@ final class AudNodeVTable extends ffi.Struct {
   >
   set_string;
 
+  /// [control] The latency in frames after prepare; NULL means 0.
+  external ffi.Pointer<
+    ffi.NativeFunction<ffi.Uint32 Function(ffi.Pointer<ffi.Void> instance)>
+  >
+  get_latency;
+
+  /// [control] The tail in frames after the input stops, or
+  /// AUD_TAIL_INFINITE; NULL means 0.
+  external ffi.Pointer<
+    ffi.NativeFunction<ffi.Uint32 Function(ffi.Pointer<ffi.Void> instance)>
+  >
+  get_tail;
+
+  /// [offline] Writes the state into `buffer` and its size into `size`;
+  /// AUD_ERROR_BUFFER_TOO_SMALL with the needed size when `capacity` is
+  /// too small. NULL unless AUD_NODE_CAP_STATE is set.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int32 Function(
+        ffi.Pointer<ffi.Void> instance,
+        ffi.Pointer<ffi.Void> buffer,
+        ffi.Size capacity,
+        ffi.Pointer<ffi.Size> size,
+      )
+    >
+  >
+  save_state;
+
+  /// [offline] Restores a state saved by `version` of the state format;
+  /// AUD_ERROR_STATE_VERSION when the node cannot read it. NULL unless
+  /// AUD_NODE_CAP_STATE is set.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int32 Function(
+        ffi.Pointer<ffi.Void> instance,
+        ffi.Pointer<ffi.Void> data,
+        ffi.Size size,
+        ffi.Uint32 version,
+      )
+    >
+  >
+  load_state;
+
   static ffi.Pointer<AudNodeVTable> $allocate(
     ffi.Allocator $allocator, {
     required int struct_size,
@@ -418,15 +1107,15 @@ final class AudNodeVTable extends ffi.Struct {
       ffi.NativeFunction<
         ffi.Int32 Function(
           ffi.Pointer<ffi.Void> instance,
-          ffi.Double sample_rate,
-          ffi.Uint32 max_frames,
-          ffi.Uint32 channels,
+          ffi.Pointer<AudPrepareInfo> info,
         )
       >
     >
     prepare,
     required ffi.Pointer<
-      ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void> instance)>
+      ffi.NativeFunction<
+        ffi.Void Function(ffi.Pointer<ffi.Void> instance, ffi.Uint32 reason)
+      >
     >
     reset,
     required ffi.Pointer<
@@ -439,15 +1128,6 @@ final class AudNodeVTable extends ffi.Struct {
       >
     >
     set_param,
-    required ffi.Pointer<
-      ffi.NativeFunction<
-        ffi.Void Function(
-          ffi.Pointer<ffi.Void> instance,
-          ffi.Pointer<AudEvent> event,
-        )
-      >
-    >
-    event,
     required ffi.Pointer<
       ffi.NativeFunction<
         ffi.Void Function(
@@ -467,6 +1147,36 @@ final class AudNodeVTable extends ffi.Struct {
       >
     >
     set_string,
+    required ffi.Pointer<
+      ffi.NativeFunction<ffi.Uint32 Function(ffi.Pointer<ffi.Void> instance)>
+    >
+    get_latency,
+    required ffi.Pointer<
+      ffi.NativeFunction<ffi.Uint32 Function(ffi.Pointer<ffi.Void> instance)>
+    >
+    get_tail,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int32 Function(
+          ffi.Pointer<ffi.Void> instance,
+          ffi.Pointer<ffi.Void> buffer,
+          ffi.Size capacity,
+          ffi.Pointer<ffi.Size> size,
+        )
+      >
+    >
+    save_state,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int32 Function(
+          ffi.Pointer<ffi.Void> instance,
+          ffi.Pointer<ffi.Void> data,
+          ffi.Size size,
+          ffi.Uint32 version,
+        )
+      >
+    >
+    load_state,
   }) => $allocator<AudNodeVTable>()
     ..ref.struct_size = struct_size
     ..ref.create = create
@@ -474,9 +1184,12 @@ final class AudNodeVTable extends ffi.Struct {
     ..ref.prepare = prepare
     ..ref.reset = reset
     ..ref.set_param = set_param
-    ..ref.event = event
     ..ref.process = process
-    ..ref.set_string = set_string;
+    ..ref.set_string = set_string
+    ..ref.get_latency = get_latency
+    ..ref.get_tail = get_tail
+    ..ref.save_state = save_state
+    ..ref.load_state = load_state;
 }
 
 /// A parameter of a node type.
@@ -502,6 +1215,17 @@ final class AudParamDescriptor extends ffi.Struct {
   @ffi.Float()
   external double default_value;
 
+  /// AUD_PARAM_*
+  @ffi.Uint32()
+  external int flags;
+
+  /// with AUD_PARAM_STEPPED
+  @ffi.Uint32()
+  external int steps;
+
+  @ffi.Uint32()
+  external int reserved;
+
   static ffi.Pointer<AudParamDescriptor> $allocate(
     ffi.Allocator $allocator, {
     required int struct_size,
@@ -511,6 +1235,9 @@ final class AudParamDescriptor extends ffi.Struct {
     required double min_value,
     required double max_value,
     required double default_value,
+    required int flags,
+    required int steps,
+    required int reserved,
   }) => $allocator<AudParamDescriptor>()
     ..ref.struct_size = struct_size
     ..ref.id = id
@@ -518,10 +1245,69 @@ final class AudParamDescriptor extends ffi.Struct {
     ..ref.unit = unit
     ..ref.min_value = min_value
     ..ref.max_value = max_value
-    ..ref.default_value = default_value;
+    ..ref.default_value = default_value
+    ..ref.flags = flags
+    ..ref.steps = steps
+    ..ref.reserved = reserved;
 }
 
-/// The block a node renders. Buses are planar: one float array per channel.
+/// What an instance is prepared for: the sample rate, the largest block and
+/// the channel count of every bus.
+final class AudPrepareInfo extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  @ffi.Uint32()
+  external int max_frames;
+
+  @ffi.Double()
+  external double sample_rate;
+
+  /// AUD_PROCESS_*
+  @ffi.Uint32()
+  external int flags;
+
+  @ffi.Uint32()
+  external int num_input_buses;
+
+  /// channels per input bus
+  external ffi.Pointer<ffi.Uint32> input_channels;
+
+  @ffi.Uint32()
+  external int num_output_buses;
+
+  @ffi.Uint32()
+  external int reserved;
+
+  /// channels per output bus
+  external ffi.Pointer<ffi.Uint32> output_channels;
+
+  static ffi.Pointer<AudPrepareInfo> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required int max_frames,
+    required double sample_rate,
+    required int flags,
+    required int num_input_buses,
+    required ffi.Pointer<ffi.Uint32> input_channels,
+    required int num_output_buses,
+    required int reserved,
+    required ffi.Pointer<ffi.Uint32> output_channels,
+  }) => $allocator<AudPrepareInfo>()
+    ..ref.struct_size = struct_size
+    ..ref.max_frames = max_frames
+    ..ref.sample_rate = sample_rate
+    ..ref.flags = flags
+    ..ref.num_input_buses = num_input_buses
+    ..ref.input_channels = input_channels
+    ..ref.num_output_buses = num_output_buses
+    ..ref.reserved = reserved
+    ..ref.output_channels = output_channels;
+}
+
+/// The block a node renders: its buses, the events that fall into it in
+/// ascending sample offset, and the transport snapshot for nodes that
+/// declare AUD_NODE_CAP_TRANSPORT (NULL otherwise).
 final class AudProcessContext extends ffi.Struct {
   @ffi.Uint32()
   external int struct_size;
@@ -530,34 +1316,62 @@ final class AudProcessContext extends ffi.Struct {
   @ffi.Uint32()
   external int frames;
 
-  /// channels per bus
-  @ffi.Uint32()
-  external int channels;
-
   @ffi.Double()
   external double sample_rate;
 
-  /// input bus; NULL for a source node
-  external ffi.Pointer<ffi.Pointer<ffi.Float>> inputs;
+  /// sample position of the first frame
+  @ffi.Int64()
+  external int sample_position;
 
-  /// output bus
-  external ffi.Pointer<ffi.Pointer<ffi.Float>> outputs;
+  /// AUD_PROCESS_*
+  @ffi.Uint32()
+  external int flags;
+
+  @ffi.Uint32()
+  external int num_input_buses;
+
+  /// NULL for a source node
+  external ffi.Pointer<AudAudioBus> inputs;
+
+  @ffi.Uint32()
+  external int num_output_buses;
+
+  @ffi.Uint32()
+  external int num_events;
+
+  external ffi.Pointer<AudAudioBus> outputs;
+
+  external ffi.Pointer<AudEvent> events;
+
+  external ffi.Pointer<AudTransportSnapshot> transport;
 
   static ffi.Pointer<AudProcessContext> $allocate(
     ffi.Allocator $allocator, {
     required int struct_size,
     required int frames,
-    required int channels,
     required double sample_rate,
-    required ffi.Pointer<ffi.Pointer<ffi.Float>> inputs,
-    required ffi.Pointer<ffi.Pointer<ffi.Float>> outputs,
+    required int sample_position,
+    required int flags,
+    required int num_input_buses,
+    required ffi.Pointer<AudAudioBus> inputs,
+    required int num_output_buses,
+    required int num_events,
+    required ffi.Pointer<AudAudioBus> outputs,
+    required ffi.Pointer<AudEvent> events,
+    required ffi.Pointer<AudTransportSnapshot> transport,
   }) => $allocator<AudProcessContext>()
     ..ref.struct_size = struct_size
     ..ref.frames = frames
-    ..ref.channels = channels
     ..ref.sample_rate = sample_rate
+    ..ref.sample_position = sample_position
+    ..ref.flags = flags
+    ..ref.num_input_buses = num_input_buses
     ..ref.inputs = inputs
-    ..ref.outputs = outputs;
+    ..ref.num_output_buses = num_output_buses
+    ..ref.num_events = num_events
+    ..ref.outputs = outputs
+    ..ref.events = events
+    ..ref.transport = transport;
 }
 
 /// The signature of the registration entry point every DSP package exports
@@ -570,22 +1384,440 @@ typedef DartAudRegisterFunctionFunction =
     int Function(ffi.Pointer<AudHostApi> host);
 
 /// [realtime] The render interface between a host of the engine and the
-/// engine (plugin-002): the host supplies an interleaved output buffer, the
-/// engine fills `frames` frames of `channels` channels. aud_audio_io calls
-/// it from its stream callback.
-typedef AudRenderCallback =
-    ffi.Pointer<ffi.NativeFunction<AudRenderCallbackFunction>>;
-typedef AudRenderCallbackFunction =
-    ffi.Void Function(
+/// engine: aud_audio_io calls it from its stream callback, the plugin shells
+/// from the host's process call, the offline renderer from its loop.
+typedef AudRenderFunction =
+    ffi.Pointer<ffi.NativeFunction<AudRenderFunctionFunction>>;
+typedef AudRenderFunctionFunction =
+    ffi.Int32 Function(
       ffi.Pointer<ffi.Void> user,
-      ffi.Pointer<ffi.Float> interleaved_output,
-      ffi.Uint32 frames,
-      ffi.Uint32 channels,
+      ffi.Pointer<AudRenderRequest> request,
     );
-typedef DartAudRenderCallbackFunction =
-    void Function(
+typedef DartAudRenderFunctionFunction =
+    int Function(
       ffi.Pointer<ffi.Void> user,
-      ffi.Pointer<ffi.Float> interleaved_output,
-      int frames,
-      int channels,
+      ffi.Pointer<AudRenderRequest> request,
     );
+
+/// What a host of the engine hands to one render call (plugin-002): the
+/// buses it supplies, the stream time of the block, the events of the block
+/// and, for plugin hosts, the transport segments; NULL lets the engine's own
+/// provider run.
+final class AudRenderRequest extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  @ffi.Uint32()
+  external int frames;
+
+  @ffi.Uint32()
+  external int num_input_buses;
+
+  @ffi.Uint32()
+  external int num_output_buses;
+
+  external ffi.Pointer<AudAudioBus> inputs;
+
+  external ffi.Pointer<AudAudioBus> outputs;
+
+  external ffi.Pointer<AudStreamTime> time;
+
+  @ffi.Uint32()
+  external int num_events;
+
+  @ffi.Uint32()
+  external int reserved;
+
+  external ffi.Pointer<AudEvent> events;
+
+  external ffi.Pointer<AudTransportSnapshot> transport;
+
+  static ffi.Pointer<AudRenderRequest> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required int frames,
+    required int num_input_buses,
+    required int num_output_buses,
+    required ffi.Pointer<AudAudioBus> inputs,
+    required ffi.Pointer<AudAudioBus> outputs,
+    required ffi.Pointer<AudStreamTime> time,
+    required int num_events,
+    required int reserved,
+    required ffi.Pointer<AudEvent> events,
+    required ffi.Pointer<AudTransportSnapshot> transport,
+  }) => $allocator<AudRenderRequest>()
+    ..ref.struct_size = struct_size
+    ..ref.frames = frames
+    ..ref.num_input_buses = num_input_buses
+    ..ref.num_output_buses = num_output_buses
+    ..ref.inputs = inputs
+    ..ref.outputs = outputs
+    ..ref.time = time
+    ..ref.num_events = num_events
+    ..ref.reserved = reserved
+    ..ref.events = events
+    ..ref.transport = transport;
+}
+
+/// What a stream delivers with every callback: the sample position of the
+/// block, the host time at which its first frame reaches the output (for
+/// input: was captured), with its source and accuracy, and the latencies.
+final class AudStreamTime extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  @ffi.Uint32()
+  external int frames;
+
+  @ffi.Double()
+  external double sample_rate;
+
+  @ffi.Int64()
+  external int sample_position;
+
+  @ffi.Int64()
+  external int host_time_ns;
+
+  /// AUD_TIME_SOURCE_*
+  @ffi.Uint32()
+  external int host_time_source;
+
+  @ffi.Uint32()
+  external int reserved;
+
+  /// 0 when unknown
+  @ffi.Int64()
+  external int host_time_accuracy_ns;
+
+  @ffi.Uint32()
+  external int output_latency_frames;
+
+  @ffi.Uint32()
+  external int input_latency_frames;
+
+  static ffi.Pointer<AudStreamTime> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required int frames,
+    required double sample_rate,
+    required int sample_position,
+    required int host_time_ns,
+    required int host_time_source,
+    required int reserved,
+    required int host_time_accuracy_ns,
+    required int output_latency_frames,
+    required int input_latency_frames,
+  }) => $allocator<AudStreamTime>()
+    ..ref.struct_size = struct_size
+    ..ref.frames = frames
+    ..ref.sample_rate = sample_rate
+    ..ref.sample_position = sample_position
+    ..ref.host_time_ns = host_time_ns
+    ..ref.host_time_source = host_time_source
+    ..ref.reserved = reserved
+    ..ref.host_time_accuracy_ns = host_time_accuracy_ns
+    ..ref.output_latency_frames = output_latency_frames
+    ..ref.input_latency_frames = input_latency_frames;
+}
+
+/// A key of a string setting a node type accepts on the control thread.
+final class AudStringKeyDescriptor extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  /// the key passed to set_string
+  @ffi.Uint32()
+  external int key;
+
+  /// stable identifier, e.g. "sfz_file"
+  external ffi.Pointer<ffi.Char> id;
+
+  /// display name
+  external ffi.Pointer<ffi.Char> name;
+
+  static ffi.Pointer<AudStringKeyDescriptor> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required int key,
+    required ffi.Pointer<ffi.Char> id,
+    required ffi.Pointer<ffi.Char> name,
+  }) => $allocator<AudStringKeyDescriptor>()
+    ..ref.struct_size = struct_size
+    ..ref.key = key
+    ..ref.id = id
+    ..ref.name = name;
+}
+
+/// A point in time in one of the domains. `value` is a sample position, a
+/// host time in nanoseconds or a beat position in ticks; immediate ignores
+/// it.
+final class AudTimestamp extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  /// AUD_TIME_*
+  @ffi.Uint32()
+  external int domain;
+
+  /// AUD_TIME_SOURCE_*, for host times
+  @ffi.Uint32()
+  external int source;
+
+  /// reserved, 0
+  @ffi.Uint32()
+  external int flags;
+
+  @ffi.Int64()
+  external int value;
+
+  static ffi.Pointer<AudTimestamp> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required int domain,
+    required int source,
+    required int flags,
+    required int value,
+  }) => $allocator<AudTimestamp>()
+    ..ref.struct_size = struct_size
+    ..ref.domain = domain
+    ..ref.source = source
+    ..ref.flags = flags
+    ..ref.value = value;
+}
+
+/// A transport provider behind the ABI: the internal clock, Ableton Link or
+/// a plugin host. The engine captures the segments of every block on the
+/// callback thread; requests reach the provider on the same thread, so a
+/// provider commits its session state on one thread only.
+final class AudTransportProviderVTable extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  /// [control] Creates a provider; returns NULL on failure.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Pointer<ffi.Void> Function(ffi.Pointer<AudHostApi> host)
+    >
+  >
+  create;
+
+  /// [control] Destroys a provider.
+  external ffi.Pointer<
+    ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void> provider)>
+  >
+  destroy;
+
+  /// [control] The AUD_TRANSPORT_CAP_* flags of the provider.
+  external ffi.Pointer<
+    ffi.NativeFunction<ffi.Uint32 Function(ffi.Pointer<ffi.Void> provider)>
+  >
+  capabilities;
+
+  /// [realtime] Writes the segments covering the block described by `time`
+  /// into `segments` (at most `max_segments`) and their number into
+  /// `num_segments`; AUD_OK or an error code.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int32 Function(
+        ffi.Pointer<ffi.Void> provider,
+        ffi.Pointer<AudStreamTime> time,
+        ffi.Pointer<AudTransportSegment> segments,
+        ffi.Uint32 max_segments,
+        ffi.Pointer<ffi.Uint32> num_segments,
+      )
+    >
+  >
+  capture;
+
+  /// [realtime] Applies a request; AUD_ERROR_UNSUPPORTED for a request the
+  /// capabilities exclude.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int32 Function(
+        ffi.Pointer<ffi.Void> provider,
+        ffi.Pointer<AudTransportRequest> request,
+      )
+    >
+  >
+  request;
+
+  static ffi.Pointer<AudTransportProviderVTable> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Pointer<ffi.Void> Function(ffi.Pointer<AudHostApi> host)
+      >
+    >
+    create,
+    required ffi.Pointer<
+      ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void> provider)>
+    >
+    destroy,
+    required ffi.Pointer<
+      ffi.NativeFunction<ffi.Uint32 Function(ffi.Pointer<ffi.Void> provider)>
+    >
+    capabilities,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int32 Function(
+          ffi.Pointer<ffi.Void> provider,
+          ffi.Pointer<AudStreamTime> time,
+          ffi.Pointer<AudTransportSegment> segments,
+          ffi.Uint32 max_segments,
+          ffi.Pointer<ffi.Uint32> num_segments,
+        )
+      >
+    >
+    capture,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int32 Function(
+          ffi.Pointer<ffi.Void> provider,
+          ffi.Pointer<AudTransportRequest> request,
+        )
+      >
+    >
+    request,
+  }) => $allocator<AudTransportProviderVTable>()
+    ..ref.struct_size = struct_size
+    ..ref.create = create
+    ..ref.destroy = destroy
+    ..ref.capabilities = capabilities
+    ..ref.capture = capture
+    ..ref.request = request;
+}
+
+/// A request to the transport: start or stop at a time, seek to a beat, set
+/// the tempo, the time signature, the loop or the quantum.
+final class AudTransportRequest extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  /// AUD_TRANSPORT_REQUEST_*
+  @ffi.Uint32()
+  external int type;
+
+  /// when the request takes effect; immediate by default
+  external AudTimestamp at;
+
+  /// seek target, loop start, in ticks
+  @ffi.Int64()
+  external int beat;
+
+  /// loop end, in ticks
+  @ffi.Int64()
+  external int beat_end;
+
+  /// tempo in beats per minute, quantum in beats
+  @ffi.Double()
+  external double value;
+
+  @ffi.Uint32()
+  external int numerator;
+
+  @ffi.Uint32()
+  external int denominator;
+}
+
+/// A segment of the transport timeline inside one block: a range of frames
+/// with a musical position, a tempo and a tempo slope. The beat at frame k
+/// of the segment is `beat + (tempo * k + tempo_increment * k * k / 2) /
+/// (60 * sample_rate)` beats while playing; a stopped segment holds its
+/// position.
+final class AudTransportSegment extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  /// first frame of the segment inside the block
+  @ffi.Uint32()
+  external int sample_offset;
+
+  /// frames of the segment
+  @ffi.Uint32()
+  external int frames;
+
+  /// AUD_SEGMENT_*
+  @ffi.Uint32()
+  external int flags;
+
+  /// musical position at the first frame, ticks
+  @ffi.Int64()
+  external int beat;
+
+  /// beats per minute at the first frame
+  @ffi.Double()
+  external double tempo;
+
+  /// beats per minute per frame
+  @ffi.Double()
+  external double tempo_increment;
+
+  /// beat of the current bar's start, ticks
+  @ffi.Int64()
+  external int bar_start;
+
+  @ffi.Uint32()
+  external int time_signature_numerator;
+
+  @ffi.Uint32()
+  external int time_signature_denominator;
+
+  /// ticks; valid with AUD_SEGMENT_LOOPING
+  @ffi.Int64()
+  external int loop_start;
+
+  /// ticks; valid with AUD_SEGMENT_LOOPING
+  @ffi.Int64()
+  external int loop_end;
+
+  static ffi.Pointer<AudTransportSegment> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required int sample_offset,
+    required int frames,
+    required int flags,
+    required int beat,
+    required double tempo,
+    required double tempo_increment,
+    required int bar_start,
+    required int time_signature_numerator,
+    required int time_signature_denominator,
+    required int loop_start,
+    required int loop_end,
+  }) => $allocator<AudTransportSegment>()
+    ..ref.struct_size = struct_size
+    ..ref.sample_offset = sample_offset
+    ..ref.frames = frames
+    ..ref.flags = flags
+    ..ref.beat = beat
+    ..ref.tempo = tempo
+    ..ref.tempo_increment = tempo_increment
+    ..ref.bar_start = bar_start
+    ..ref.time_signature_numerator = time_signature_numerator
+    ..ref.time_signature_denominator = time_signature_denominator
+    ..ref.loop_start = loop_start
+    ..ref.loop_end = loop_end;
+}
+
+/// The per-block snapshot the callback thread captures once before the
+/// render program runs: the stream's time and the segments covering the
+/// block. Every conversion between the domains runs over it.
+final class AudTransportSnapshot extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  /// AUD_TRANSPORT_CAP_* of the provider
+  @ffi.Uint32()
+  external int capabilities;
+
+  @ffi.Uint32()
+  external int num_segments;
+
+  @ffi.Uint32()
+  external int reserved;
+
+  external ffi.Pointer<AudTransportSegment> segments;
+
+  external AudStreamTime time;
+}
