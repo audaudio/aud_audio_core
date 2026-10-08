@@ -1,29 +1,33 @@
+// @license
+// Copyright (c) Audanika. All Rights Reserved.
+//
+// Use of this source code is governed by terms that can be
+// found in the LICENSE file in the root of this package.
+
 #include "aud_audio_core.h"
 
-// A very short-lived native function.
-//
-// For very short-lived functions, it is fine to call them on the main isolate.
-// They will block the Dart execution while running the native function, so
-// only do this for native functions which are guaranteed to be short-lived.
-FFI_PLUGIN_EXPORT intptr_t sum(intptr_t a, intptr_t b) {
-#ifdef DEBUG
-  return a + b + 1000;
-#else
-  return a + b;
-#endif
+AUD_EXPORT int32_t aud_abi_version_major(void) { return AUD_ABI_VERSION_MAJOR; }
+
+AUD_EXPORT int32_t aud_abi_version_minor(void) { return AUD_ABI_VERSION_MINOR; }
+
+AUD_EXPORT int32_t aud_abi_sizeof_event(void) { return (int32_t)sizeof(AudEvent); }
+
+AUD_EXPORT int32_t aud_abi_sizeof_param_descriptor(void) {
+  return (int32_t)sizeof(AudParamDescriptor);
 }
 
-// A longer-lived native function, which occupies the thread calling it.
-//
-// Do not call these kind of native functions in the main isolate. They will
-// block Dart execution. This will cause dropped frames in Flutter applications.
-// Instead, call these native functions on a separate isolate.
-FFI_PLUGIN_EXPORT intptr_t sum_long_running(intptr_t a, intptr_t b) {
-  // Simulate work.
-#if _WIN32
-  Sleep(5000);
-#else
-  usleep(5000 * 1000);
-#endif
-  return a + b;
+AUD_EXPORT int32_t aud_abi_sizeof_process_context(void) {
+  return (int32_t)sizeof(AudProcessContext);
+}
+
+AUD_EXPORT int32_t aud_abi_sizeof_node_vtable(void) {
+  return (int32_t)sizeof(AudNodeVTable);
+}
+
+AUD_EXPORT int32_t aud_abi_sizeof_node_descriptor(void) {
+  return (int32_t)sizeof(AudNodeDescriptor);
+}
+
+AUD_EXPORT int32_t aud_abi_sizeof_host_api(void) {
+  return (int32_t)sizeof(AudHostApi);
 }

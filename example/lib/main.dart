@@ -1,71 +1,41 @@
+// @license
+// Copyright (c) Audanika. All Rights Reserved.
+//
+// Use of this source code is governed by terms that can be
+// found in the LICENSE file in the root of this package.
+
+import 'package:aud_audio_core/aud_audio_core.dart';
 import 'package:flutter/material.dart';
 
-import 'dart:async';
-
-import 'package:aud_audio_core/aud_audio_core.dart' as aud_audio_core;
-
 void main() {
-  runApp(const MyApp());
+  runApp(const AudCoreExampleApp());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  late int sumResult;
-  late Future<int> sumAsyncResult;
-
-  @override
-  void initState() {
-    super.initState();
-    sumResult = aud_audio_core.sum(1, 2);
-    sumAsyncResult = aud_audio_core.sumAsync(3, 4);
-  }
+/// Shows the ABI version of the native core and the struct size check.
+class AudCoreExampleApp extends StatelessWidget {
+  /// Creates the example app.
+  const AudCoreExampleApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const textStyle = TextStyle(fontSize: 25);
-    const spacerSmall = SizedBox(height: 10);
+    final sizesAgree =
+        AudAbi.dartStructSizes.toString() ==
+        AudAbi.nativeStructSizes.toString();
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Native Packages')),
-        body: SingleChildScrollView(
-          child: Container(
-            padding: const .all(10),
-            child: Column(
-              children: [
-                const Text(
-                  'This calls a native function through FFI that is shipped as source in the package. '
-                  'The native code is built as part of the Flutter Runner build.',
-                  style: textStyle,
-                  textAlign: .center,
-                ),
-                spacerSmall,
-                Text(
-                  'sum(1, 2) = $sumResult',
-                  style: textStyle,
-                  textAlign: .center,
-                ),
-                spacerSmall,
-                FutureBuilder<int>(
-                  future: sumAsyncResult,
-                  builder: (BuildContext context, AsyncSnapshot<int> value) {
-                    final displayValue = (value.hasData)
-                        ? value.data
-                        : 'loading';
-                    return Text(
-                      'await sumAsync(3, 4) = $displayValue',
-                      style: textStyle,
-                      textAlign: .center,
-                    );
-                  },
-                ),
-              ],
-            ),
+        appBar: AppBar(title: const Text('aud_audio_core')),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('ABI version (Dart): ${AudAbi.major}.${AudAbi.minor}'),
+              Text(
+                'ABI version (native): '
+                '${AudAbi.nativeMajor}.${AudAbi.nativeMinor}',
+              ),
+              Text('Struct sizes agree: $sizesAgree'),
+            ],
           ),
         ),
       ),
