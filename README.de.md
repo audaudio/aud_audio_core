@@ -9,7 +9,9 @@ Teil der Audanika Audio Engine; geplant in [aud_audio_pm](https://github.com/aud
 Header-only C und C++ in `src/`, von jedem Paket der Familie eingebunden
 und nie gelinkt: `aud_abi.h` (die versionierte C-ABI mit Deskriptoren,
 Events, Prozesskontext, Zeitstempeln, Transport-Verträgen, Node-Vtable und
-Host-API; in Major 0 müssen die Minors exakt übereinstimmen),
+Host-API; seit 0.3 mit den Ergebniscodes cycle, format, lookahead,
+capacity, retired und overload für den Graphen; in Major 0 müssen die
+Minors exakt übereinstimmen),
 `aud_clock.h`, `aud_time_filter.h` (Sample-zu-Hostzeit-Filter),
 `aud_transport.h` (Beat-, Sample- und Hostzeit-Umrechnung), `aud_ump.h`
 (UMP-Felder inklusive Per-Note-Controller), `aud_spsc_queue.hpp`,

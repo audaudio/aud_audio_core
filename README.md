@@ -9,8 +9,10 @@ Part of the Audanika Audio Engine; planned in [aud_audio_pm](https://github.com/
 Header-only C and C++ in `src/`, included by every package of the family
 and never linked:
 
-- `aud_abi.h` — the versioned C ABI (abi-001): sized structs, result codes,
-  capabilities, thread affinity tags, bus, event port, parameter and string
+- `aud_abi.h` — the versioned C ABI (abi-001): sized structs, result codes
+  (since 0.3 also cycle, format, lookahead, capacity, retired and overload
+  for the graph), capabilities, thread affinity tags, bus, event port,
+  parameter and string
   key descriptors, `AudEvent` (UMP, control and parameter events),
   `AudProcessContext` with planar buses, `AudTimestamp` with the domains
   immediate, sample, host and beat, `AudStreamTime`, the transport segments,
