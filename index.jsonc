@@ -1,0 +1,32 @@
+// @license
+// Copyright (c) Audanika. All Rights Reserved.
+//
+// Use of this source code is governed by terms that can be
+// found in the LICENSE file in the root of this package.
+
+{
+  "name": "aud_audio_core",
+  "summary": "Core of the Audanika Audio Engine: the C ABI, buffer and event formats, node contracts, timing contract and OSC message model.",
+  "domain": [
+    "Core of the Audanika Audio Engine"
+  ],
+  "interfaces": {
+    "uses": {
+      "aud_midi_standard": "package dependency"
+    },
+    "usedBy": {
+      "aud_audio_graph": "consumes this package",
+      "aud_audio_io": "consumes this package",
+      "aud_audio": "consumes this package",
+      "aud_dsp_sampler": "consumes this package",
+      "aud_dsp_effects": "consumes this package",
+      "aud_dsp_analysis": "consumes this package",
+      "aud_dsp_stk": "consumes this package",
+      "aud_dsp_guitar_amp": "consumes this package",
+      "aud_dsp_synth": "consumes this package",
+      "aud_dsp_spatial": "consumes this package",
+      "aud_dsp_mi": "consumes this package",
+      "aud_dsp_stretch": "consumes this package"
+    }
+  }
+}
