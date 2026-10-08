@@ -13,17 +13,24 @@ void main() {
       expect(AudAbi.nativeMajor, AudAbi.major);
       expect(AudAbi.nativeMinor, AudAbi.minor);
       expect(AudAbi.major, 0);
-      expect(AudAbi.minor, 1);
+      expect(AudAbi.minor, 2);
     });
 
     test('struct sizes agree between Dart and C', () {
       expect(AudAbi.dartStructSizes, AudAbi.nativeStructSizes);
-      expect(AudAbi.dartStructSizes.keys, hasLength(6));
+      expect(AudAbi.dartStructSizes.keys, AudAbi.structNames);
+      expect(AudAbi.structNames, hasLength(18));
+    });
+
+    test('nativeSizeOf(name) is -1 for an unknown struct', () {
+      expect(AudAbi.nativeSizeOf('AudNothing'), -1);
+      expect(AudAbi.nativeSizeOf('AudEvent'), 36);
     });
 
     test('resultName(code) names every result code', () {
       final names = {
         AUD_OK: 'AUD_OK',
+        AUD_PENDING: 'AUD_PENDING',
         AUD_ERROR_INVALID_ARGUMENT: 'AUD_ERROR_INVALID_ARGUMENT',
         AUD_ERROR_ABI_MAJOR: 'AUD_ERROR_ABI_MAJOR',
         AUD_ERROR_ABI_MINOR: 'AUD_ERROR_ABI_MINOR',
@@ -33,6 +40,11 @@ void main() {
         AUD_ERROR_OUT_OF_MEMORY: 'AUD_ERROR_OUT_OF_MEMORY',
         AUD_ERROR_STATE: 'AUD_ERROR_STATE',
         AUD_ERROR_FAILED: 'AUD_ERROR_FAILED',
+        AUD_ERROR_UNSUPPORTED: 'AUD_ERROR_UNSUPPORTED',
+        AUD_ERROR_BUFFER_TOO_SMALL: 'AUD_ERROR_BUFFER_TOO_SMALL',
+        AUD_ERROR_STATE_VERSION: 'AUD_ERROR_STATE_VERSION',
+        AUD_ERROR_LATE: 'AUD_ERROR_LATE',
+        AUD_ERROR_NOT_FOUND: 'AUD_ERROR_NOT_FOUND',
         -99: 'AUD_RESULT_-99',
       };
       for (final entry in names.entries) {
@@ -40,42 +52,54 @@ void main() {
       }
     });
 
+    test('threadName(tag) names the thread affinity tags', () {
+      expect(AudAbi.threadName(AUD_THREAD_CONTROL), 'control');
+      expect(AudAbi.threadName(AUD_THREAD_REALTIME), 'realtime');
+      expect(AudAbi.threadName(AUD_THREAD_OFFLINE), 'offline');
+      expect(AudAbi.threadName(7), 'thread_7');
+    });
+
     group('isCompatible(...)', () {
-      test('accepts the same major and an older or equal package minor', () {
-        for (final minor in [0, 1]) {
+      // (package major, package minor, engine major, engine minor, result)
+      const cases = [
+        (0, 2, 0, 2, true),
+        (0, 1, 0, 2, false),
+        (0, 3, 0, 2, false),
+        (1, 0, 1, 0, true),
+        (1, 0, 1, 3, true),
+        (1, 3, 1, 2, false),
+        (1, 0, 2, 0, false),
+        (2, 0, 1, 5, false),
+      ];
+
+      for (final (pm, pn, em, en, expected) in cases) {
+        test('package $pm.$pn on engine $em.$en is $expected', () {
+          final named = (
+            packageMajor: pm,
+            packageMinor: pn,
+            engineMajor: em,
+            engineMinor: en,
+          );
           expect(
             AudAbi.isCompatible(
-              packageMajor: 0,
-              packageMinor: minor,
-              engineMajor: 0,
-              engineMinor: 1,
+              packageMajor: named.packageMajor,
+              packageMinor: named.packageMinor,
+              engineMajor: named.engineMajor,
+              engineMinor: named.engineMinor,
             ),
-            isTrue,
-            reason: 'package minor $minor',
+            expected,
           );
-        }
-      });
-
-      test('refuses another major or a newer package minor', () {
-        expect(
-          AudAbi.isCompatible(
-            packageMajor: 1,
-            packageMinor: 0,
-            engineMajor: 0,
-            engineMinor: 1,
-          ),
-          isFalse,
-        );
-        expect(
-          AudAbi.isCompatible(
-            packageMajor: 0,
-            packageMinor: 2,
-            engineMajor: 0,
-            engineMinor: 1,
-          ),
-          isFalse,
-        );
-      });
+          expect(
+            AudAbi.nativeIsCompatible(
+              packageMajor: named.packageMajor,
+              packageMinor: named.packageMinor,
+              engineMajor: named.engineMajor,
+              engineMinor: named.engineMinor,
+            ),
+            expected,
+          );
+        });
+      }
     });
   });
 }

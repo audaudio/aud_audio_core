@@ -4,37 +4,69 @@ Core of the Audanika Audio Engine: the C ABI, buffer and event formats, node con
 
 Part of the Audanika Audio Engine; planned in [aud_audio_pm](https://github.com/audaudio/aud_audio_pm).
 
-## What the package holds (spike state, ticket 5)
+## What the package holds (ABI 0.2, ticket 18)
 
-- `src/aud_abi.h` — the C ABI between the engine and the DSP packages:
-  sized structs, the ABI version `AUD_ABI_VERSION_MAJOR.MINOR`, result
-  codes, node capabilities, thread affinity tags, `AudEvent`,
-  `AudParamDescriptor`, `AudProcessContext` (planar buses),
-  `AudNodeVTable`, `AudNodeDescriptor`, `AudHostApi` (registration,
-  allocator, log) and `AudRenderCallback`, the render interface a host
-  uses to pull blocks from the engine.
-- `src/aud_clock.h` — `aud_clock_now_ns()`, the monotonic host clock.
-- `src/aud_spsc_queue.hpp` — a lock-free single-producer single-consumer
-  queue with a fixed capacity.
-- The headers are included by the other packages through their build
-  hooks; nothing links the core. The native library only reports the ABI
-  version and the struct sizes.
+Header-only C and C++ in `src/`, included by every package of the family
+and never linked:
+
+- `aud_abi.h` — the versioned C ABI (abi-001): sized structs, result codes,
+  capabilities, thread affinity tags, bus, event port, parameter and string
+  key descriptors, `AudEvent` (UMP, control and parameter events),
+  `AudProcessContext` with planar buses, `AudTimestamp` with the domains
+  immediate, sample, host and beat, `AudStreamTime`, the transport segments,
+  snapshot, requests and provider vtable (time-001), the node vtable with
+  reset reasons, latency, tail and state blobs, `AudHostApi` and the
+  `AudRenderRequest` of the headless host (plugin-002). In major 0 the
+  minors must match exactly; from 1.0 on an engine accepts older minors.
+- `aud_clock.h` — the monotonic host clock.
+- `aud_time_filter.h` — the sample-to-host-time filter with its reset rules.
+- `aud_transport.h` — beat, sample and host time conversions over a snapshot.
+- `aud_ump.h` — Universal MIDI Packet fields, per-note controllers included.
+- `aud_spsc_queue.hpp` — the lock-free single-producer queue (interop-002).
+- `aud_param_ramp.hpp`, `aud_node_base.hpp`, `aud_fixed_block_adapter.hpp`
+  — the ramp, the node base class that splits blocks at event offsets in
+  sub-ranges of 16 frames (graph-002), and the fixed-block adapter.
+
+The native library exports the ABI version and struct sizes, handle APIs
+of the filter, the conversions, the ramp and the adapter, and registers the
+reference node `aud.core.gain` through `aud_audio_core_register`.
 
 ## Dart API
 
 ```dart
 import 'package:aud_audio_core/aud_audio_core.dart';
 
-AudAbi.major;                 // the ABI version of the Dart side
-AudAbi.nativeMajor;           // the ABI version of the native core
-AudAbi.dartStructSizes;       // sizes of the ABI structs in Dart ...
-AudAbi.nativeStructSizes;     // ... and in C; equal when the layouts agree
-AudAbi.resultName(AUD_ERROR_QUEUE_FULL); // 'AUD_ERROR_QUEUE_FULL'
-AudAbi.isCompatible(packageMajor: 0, packageMinor: 1, engineMajor: 0, engineMinor: 1);
+AudAbi.major;                              // 0; AudAbi.minor is 2
+AudAbi.dartStructSizes == AudAbi.nativeStructSizes;
+
+final at = AudTimestamp.beat(4);           // or .sample(n), .host(ns), .immediate()
+snapshot.resolve(at);                      // AudResolution: ok(offset), late, pending
+
+final filter = AudTimeFilter(sampleRate: 48000);
+filter.add(samplePosition: 0, frames: 256, hostTimeNs: AudClock.nowNs());
+filter.hostTimeAt(48000);
+
+final events = AudUmpEvent.fromMessage(      // aud_midi_standard messages (midi-001)
+  const MidiNoteOn(channel: 0, note: 60, velocity: 100),
+);
+const ramp = AudParamEvent(paramIndex: 0, value: 0.5, rampFrames: 64);
+
+final router = AudOscRouter()
+  ..registerNode(graph: 1, node: 2, handle: 20, descriptor: descriptor);
+final adapter = AudOscAdapter(router: router);
+adapter.convert(AudOscMessage('/graph/1/node/2/param/gain', [0.5]));
+// [AudSetParamCommand(node: 20, paramIndex: 0, value: 0.5)]
+
+final preset = AudNodePreset.defaults(descriptor);  // JSON schema in doc/schemas
+preset.validate(descriptor);                        // [] when it fits
 ```
 
-The generated bindings export the ABI structs (`AudHostApi`,
-`AudNodeDescriptor`, ...) and the constants (`AUD_OK`, `AUD_NODE_CAP_*`,
-`AUD_EVENT_*`) for tests and for packages that build hosts or nodes.
+`package:aud_audio_core/aud_audio_core_bindings.dart` exports the raw
+ffigen bindings with the native structs for hosts and node tests.
+
+## Notices
+
+`node scripts/check-notices.js` checks the notices convention of
+license-001; see [doc/guides/notices-guide.md](doc/guides/notices-guide.md).
 
 Regenerate the bindings with `dart run ffigen --config ffigen.yaml`.

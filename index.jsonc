@@ -8,7 +8,12 @@
   "name": "aud_audio_core",
   "summary": "Core of the Audanika Audio Engine: the C ABI, buffer and event formats, node contracts, timing contract and OSC message model.",
   "domain": [
-    "Core of the Audanika Audio Engine"
+    "C ABI 0.2: aud_abi.h (descriptors, events, process context, node vtable, host api, transport provider vtable, render request)",
+    "Timing: aud_clock.h, aud_time_filter.h (sample-to-host fit, reset rules), aud_transport.h (beat/sample/host conversions)",
+    "Events: UMP via aud_midi_standard (aud_ump.h), control and parameter events",
+    "C++ node helpers: aud_node_base.hpp (sub-range splitting, ramps), aud_param_ramp.hpp, aud_fixed_block_adapter.hpp, aud_spsc_queue.hpp",
+    "Dart contracts: AudAbi, AudTimestamp, AudTransportSnapshot, AudTimeFilter, AudEvent, AudNodeDescriptor, AudNodePreset (JSON schema), AudOscAddress/Pattern/Message, AudCommand, AudOscRouter, AudOscAdapter",
+    "Reference node aud.core.gain; notices convention and scripts/check-notices.js"
   ],
   "interfaces": {
     "uses": {
