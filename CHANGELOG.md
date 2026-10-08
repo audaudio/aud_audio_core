@@ -2,30 +2,16 @@
 
 ## Unreleased
 
-### Fixed
+### Added
 
-- Define the core contracts of ABI 0.2
-
+- Define the core contracts of ABI 0.2 (ticket 18, step S1)
 - Versioned C ABI with descriptors, events, timing and transport contracts
-
 - Header-only time filter, transport conversions and UMP helpers
-
 - Node base class, parameter ramp and fixed-block adapter in C++
-
 - Dart contracts: time, transport, events, descriptors, presets, OSC
-
 - Typed commands with the OSC router and adapter
-
 - Reference node aud.core.gain registered by the native core
-
 - Notices convention with scripts/check-notices.js
-
-- Apply the review of the core contracts
-
-- Deliver inlet events on the port of the addressed inlet
-- Keep the nominal rate when the host clock runs backwards
-- Check the frame counts of the fixed-block adapter wrapper
-- Translate the README
 
 ## 0.1.0 - 2026-10-08
 
