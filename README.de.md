@@ -4,7 +4,7 @@ Kern der Audanika Audio Engine: die C-ABI, Buffer- und Event-Formate, Node-Vertr
 
 Teil der Audanika Audio Engine; geplant in [aud_audio_pm](https://github.com/audaudio/aud_audio_pm).
 
-## Was das Paket enthält (ABI 0.2, Ticket 18)
+## Was das Paket enthält (ABI 0.3, Tickets 18 und 19)
 
 Header-only C und C++ in `src/`, von jedem Paket der Familie eingebunden
 und nie gelinkt: `aud_abi.h` (die versionierte C-ABI mit Deskriptoren,
