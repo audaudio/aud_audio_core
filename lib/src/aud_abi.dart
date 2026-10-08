@@ -107,6 +107,12 @@ abstract final class AudAbi {
     bindings.AUD_ERROR_STATE_VERSION => 'AUD_ERROR_STATE_VERSION',
     bindings.AUD_ERROR_LATE => 'AUD_ERROR_LATE',
     bindings.AUD_ERROR_NOT_FOUND => 'AUD_ERROR_NOT_FOUND',
+    bindings.AUD_ERROR_CYCLE => 'AUD_ERROR_CYCLE',
+    bindings.AUD_ERROR_FORMAT => 'AUD_ERROR_FORMAT',
+    bindings.AUD_ERROR_LOOKAHEAD => 'AUD_ERROR_LOOKAHEAD',
+    bindings.AUD_ERROR_CAPACITY => 'AUD_ERROR_CAPACITY',
+    bindings.AUD_ERROR_RETIRED => 'AUD_ERROR_RETIRED',
+    bindings.AUD_ERROR_OVERLOAD => 'AUD_ERROR_OVERLOAD',
     _ => 'AUD_RESULT_$code',
   };
 

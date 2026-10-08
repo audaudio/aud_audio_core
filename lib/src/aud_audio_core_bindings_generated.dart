@@ -348,7 +348,7 @@ external int aud_core_ump_word_count(int word0);
 
 const int AUD_ABI_VERSION_MAJOR = 0;
 
-const int AUD_ABI_VERSION_MINOR = 2;
+const int AUD_ABI_VERSION_MINOR = 3;
 
 const int AUD_ARG_FALSE = 70;
 
@@ -382,19 +382,31 @@ const int AUD_ERROR_ABI_MINOR = -3;
 
 const int AUD_ERROR_BUFFER_TOO_SMALL = -11;
 
+const int AUD_ERROR_CAPACITY = -18;
+
+const int AUD_ERROR_CYCLE = -15;
+
 const int AUD_ERROR_DUPLICATE_TYPE = -4;
 
 const int AUD_ERROR_FAILED = -9;
+
+const int AUD_ERROR_FORMAT = -16;
 
 const int AUD_ERROR_INVALID_ARGUMENT = -1;
 
 const int AUD_ERROR_LATE = -13;
 
+const int AUD_ERROR_LOOKAHEAD = -17;
+
 const int AUD_ERROR_NOT_FOUND = -14;
 
 const int AUD_ERROR_OUT_OF_MEMORY = -7;
 
+const int AUD_ERROR_OVERLOAD = -20;
+
 const int AUD_ERROR_QUEUE_FULL = -6;
+
+const int AUD_ERROR_RETIRED = -19;
 
 const int AUD_ERROR_STATE = -8;
 

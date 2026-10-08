@@ -51,7 +51,7 @@ extern "C" {
 
 // The ABI version.
 #define AUD_ABI_VERSION_MAJOR 0
-#define AUD_ABI_VERSION_MINOR 2
+#define AUD_ABI_VERSION_MINOR 3
 
 // Result codes of ABI calls and engine functions.
 enum {
@@ -77,6 +77,19 @@ enum {
   AUD_ERROR_LATE = -13,
   // The handle, id or address names nothing.
   AUD_ERROR_NOT_FOUND = -14,
+  // The connection would close a cycle; feedback runs through a feedback
+  // node (graph-001).
+  AUD_ERROR_CYCLE = -15,
+  // A bus format the node or the connection does not accept.
+  AUD_ERROR_FORMAT = -16,
+  // The timestamp lies beyond the scheduling lookahead (interop-002).
+  AUD_ERROR_LOOKAHEAD = -17,
+  // A fixed capacity is exhausted: nodes, connections, scheduled events.
+  AUD_ERROR_CAPACITY = -18,
+  // The node is retired: a transaction removed it (graph-003).
+  AUD_ERROR_RETIRED = -19,
+  // The render of a block took longer than the block lasts; a diagnostic.
+  AUD_ERROR_OVERLOAD = -20,
 };
 
 // Capabilities a node type declares.

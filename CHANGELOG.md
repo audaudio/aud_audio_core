@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 - 2026-10-08
+
+### Changed
+
+- Move the core to ABI 0.3 for the audio graph (ticket 19, step S2)
+- Add the result codes cycle, format, lookahead, capacity, retired and
+overload with their Dart names
+- Name the result codes of 0.3 in the README
+- Describe ABI 0.3 in the changelog
+
 ## 0.2.0 - 2026-10-08
 
 ### Added

@@ -13,7 +13,7 @@ void main() {
       expect(AudAbi.nativeMajor, AudAbi.major);
       expect(AudAbi.nativeMinor, AudAbi.minor);
       expect(AudAbi.major, 0);
-      expect(AudAbi.minor, 2);
+      expect(AudAbi.minor, 3);
     });
 
     test('struct sizes agree between Dart and C', () {
@@ -45,6 +45,12 @@ void main() {
         AUD_ERROR_STATE_VERSION: 'AUD_ERROR_STATE_VERSION',
         AUD_ERROR_LATE: 'AUD_ERROR_LATE',
         AUD_ERROR_NOT_FOUND: 'AUD_ERROR_NOT_FOUND',
+        AUD_ERROR_CYCLE: 'AUD_ERROR_CYCLE',
+        AUD_ERROR_FORMAT: 'AUD_ERROR_FORMAT',
+        AUD_ERROR_LOOKAHEAD: 'AUD_ERROR_LOOKAHEAD',
+        AUD_ERROR_CAPACITY: 'AUD_ERROR_CAPACITY',
+        AUD_ERROR_RETIRED: 'AUD_ERROR_RETIRED',
+        AUD_ERROR_OVERLOAD: 'AUD_ERROR_OVERLOAD',
         -99: 'AUD_RESULT_-99',
       };
       for (final entry in names.entries) {
@@ -62,9 +68,9 @@ void main() {
     group('isCompatible(...)', () {
       // (package major, package minor, engine major, engine minor, result)
       const cases = [
-        (0, 2, 0, 2, true),
-        (0, 1, 0, 2, false),
-        (0, 3, 0, 2, false),
+        (0, 3, 0, 3, true),
+        (0, 2, 0, 3, false),
+        (0, 4, 0, 3, false),
         (1, 0, 1, 0, true),
         (1, 0, 1, 3, true),
         (1, 3, 1, 2, false),
