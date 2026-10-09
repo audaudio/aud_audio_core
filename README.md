@@ -35,11 +35,17 @@ reference node `aud.core.gain` through `aud_audio_core_register`.
 
 ## Dart API
 
+`aud_audio_core.dart` is platform-neutral and compiles for the web
+(web-001); `aud_audio_core_ffi.dart` adds the native parts: `AudAbiNative`,
+the conversions from and to the ABI structs (`native.toDart()`,
+`event.writeTo(pointer)`), `AudTimeFilter`, `AudParamRamp`,
+`AudFixedBlockAdapter`, `AudCoreGain` and `AudNativeTransportSnapshot`.
+
 ```dart
-import 'package:aud_audio_core/aud_audio_core.dart';
+import 'package:aud_audio_core/aud_audio_core_ffi.dart';
 
 AudAbi.major;                              // 0; AudAbi.minor is 3
-AudAbi.dartStructSizes == AudAbi.nativeStructSizes;
+AudAbiNative.dartStructSizes == AudAbiNative.nativeStructSizes;
 
 final at = AudTimestamp.beat(4);           // or .sample(n), .host(ns), .immediate()
 snapshot.resolve(at);                      // AudResolution: ok(offset), late, pending

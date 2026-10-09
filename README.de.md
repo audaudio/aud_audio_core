@@ -29,6 +29,12 @@ Siehe das Beispiel in [README.md](README.md): `AudAbi`, `AudTimestamp`,
 `aud_midi_standard`-Nachrichten), `AudNodeDescriptor`, `AudNodePreset`
 (JSON-Schema in `doc/schemas`), `AudOscAddress`, `AudOscMessage`,
 `AudCommand`, `AudOscRouter` und `AudOscAdapter`.
+`aud_audio_core.dart` ist plattformneutral und kompiliert fürs Web
+(web-001); `aud_audio_core_ffi.dart` ergänzt die nativen Teile:
+`AudAbiNative`, die Umwandlungen von und in die ABI-Strukturen
+(`native.toDart()`, `event.writeTo(pointer)`), `AudTimeFilter`,
+`AudParamRamp`, `AudFixedBlockAdapter`, `AudCoreGain` und
+`AudNativeTransportSnapshot`.
 `package:aud_audio_core/aud_audio_core_bindings.dart` exportiert die
 rohen ffigen-Bindings mit den nativen Strukturen.
 
