@@ -6,7 +6,7 @@
 
 import 'dart:typed_data';
 
-import 'package:aud_audio_core/aud_audio_core.dart';
+import 'package:aud_audio_core/aud_audio_core_ffi.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -4,12 +4,11 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:aud_midi_standard/aud_midi_standard.dart';
 
-import 'aud_audio_core_bindings_generated.dart' as bindings;
+import 'aud_abi_constants.dart' as bindings;
 import 'aud_ump.dart';
 
 // #############################################################################
@@ -30,33 +29,39 @@ final class AudImpulse {
 sealed class AudEvent {
   const AudEvent({this.sampleOffset = 0, this.port = 0, this.live = false});
 
-  /// An event from its native struct.
-  factory AudEvent.fromNative(bindings.AudEvent native) {
-    final words = [for (var i = 0; i < 4; i++) native.words[i]];
-    final live = native.flags & bindings.AUD_EVENT_FLAG_LIVE != 0;
-    return switch (native.type) {
+  /// An event from the fields of its native struct: the `AUD_EVENT_*`
+  /// [type], the four payload [words] and the `AUD_EVENT_FLAG_*` [flags].
+  factory AudEvent.fromWords({
+    required int type,
+    required List<int> words,
+    int sampleOffset = 0,
+    int port = 0,
+    int flags = 0,
+  }) {
+    final live = flags & bindings.AUD_EVENT_FLAG_LIVE != 0;
+    return switch (type) {
       bindings.AUD_EVENT_UMP => AudUmpEvent(
         Ump(words.take(AudUmp.wordCount(words[0]))),
-        sampleOffset: native.sample_offset,
-        port: native.port,
+        sampleOffset: sampleOffset,
+        port: port,
         live: live,
       ),
       bindings.AUD_EVENT_CONTROL => AudControlEvent(
         control: words[0],
         value: AudControlEvent.valueOf(typeTag: words[1], bits: words[2]),
-        sampleOffset: native.sample_offset,
-        port: native.port,
+        sampleOffset: sampleOffset,
+        port: port,
         live: live,
       ),
       bindings.AUD_EVENT_PARAM => AudParamEvent(
         paramIndex: words[0],
         value: floatOfBits(words[1]),
         rampFrames: words[2],
-        sampleOffset: native.sample_offset,
-        port: native.port,
+        sampleOffset: sampleOffset,
+        port: port,
         live: live,
       ),
-      _ => throw ArgumentError.value(native.type, 'type', 'Unknown event'),
+      _ => throw ArgumentError.value(type, 'type', 'Unknown event'),
     };
   }
 
@@ -108,23 +113,8 @@ sealed class AudEvent {
   /// The four payload words of the native struct.
   List<int> get words;
 
-  // ...........................................................................
-  /// Writes the event into its native struct.
-  void writeTo(Pointer<bindings.AudEvent> pointer) => writeToRef(pointer.ref);
-
-  /// Writes the event into a native struct reference.
-  void writeToRef(bindings.AudEvent ref) {
-    ref
-      ..struct_size = sizeOf<bindings.AudEvent>()
-      ..type = type
-      ..sample_offset = sampleOffset
-      ..port = port
-      ..flags = live ? bindings.AUD_EVENT_FLAG_LIVE : 0;
-    final payload = words;
-    for (var i = 0; i < 4; i++) {
-      ref.words[i] = payload[i];
-    }
-  }
+  /// The `AUD_EVENT_FLAG_*` flags of the native struct.
+  int get flags => live ? bindings.AUD_EVENT_FLAG_LIVE : 0;
 
   /// The event as JSON.
   Map<String, Object?> toJson();

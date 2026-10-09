@@ -6,7 +6,8 @@
 
 import 'package:aud_midi_standard/aud_midi_standard.dart';
 
-import 'aud_audio_core_bindings_generated.dart' as bindings;
+import 'aud_abi_constants.dart' as bindings;
+import 'aud_clock.dart';
 import 'aud_command.dart';
 import 'aud_event.dart';
 import 'aud_node_descriptor.dart';

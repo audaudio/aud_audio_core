@@ -4,7 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'package:aud_audio_core/aud_audio_core.dart';
+import 'package:aud_audio_core/aud_audio_core_ffi.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -19,8 +19,8 @@ class AudCoreExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sizesAgree =
-        AudAbi.dartStructSizes.toString() ==
-        AudAbi.nativeStructSizes.toString();
+        AudAbiNative.dartStructSizes.toString() ==
+        AudAbiNative.nativeStructSizes.toString();
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: const Text('aud_audio_core')),
@@ -32,7 +32,7 @@ class AudCoreExampleApp extends StatelessWidget {
               Text('ABI version (Dart): ${AudAbi.major}.${AudAbi.minor}'),
               Text(
                 'ABI version (native): '
-                '${AudAbi.nativeMajor}.${AudAbi.nativeMinor}',
+                '${AudAbiNative.nativeMajor}.${AudAbiNative.nativeMinor}',
               ),
               Text('Struct sizes agree: $sizesAgree'),
             ],

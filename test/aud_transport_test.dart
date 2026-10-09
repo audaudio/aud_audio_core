@@ -4,11 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'dart:ffi';
-
 import 'package:aud_audio_core/aud_audio_core.dart';
-import 'package:aud_audio_core/aud_audio_core_bindings.dart' as native;
-import 'package:ffi/ffi.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -65,12 +61,7 @@ void main() {
   });
 
   group('AudStreamTime', () {
-    test('native and json round trip', () {
-      final pointer = calloc<native.AudStreamTime>();
-      time.writeTo(pointer);
-      expect(pointer.ref.struct_size, sizeOf<native.AudStreamTime>());
-      expect(AudStreamTime.fromNative(pointer.ref), time);
-      calloc.free(pointer);
+    test('json round trip', () {
       expect(AudStreamTime.fromJson(time.toJson()), time);
       expect(time.hashCode, AudStreamTime.fromJson(time.toJson()).hashCode);
       expect(time.hasHostTime, isTrue);
@@ -86,18 +77,14 @@ void main() {
   });
 
   group('AudTransportSegment', () {
-    test('native and json round trip', () {
-      final pointer = calloc<native.AudTransportSegment>();
+    test('json round trip', () {
       for (final segment in [playing, accelerating]) {
-        segment.writeToRef(pointer.ref);
-        expect(AudTransportSegment.fromNative(pointer.ref), segment);
         expect(AudTransportSegment.fromJson(segment.toJson()), segment);
         expect(
           segment.hashCode,
           AudTransportSegment.fromJson(segment.toJson()).hashCode,
         );
       }
-      calloc.free(pointer);
       expect(playing.beat, 2);
       expect(playing.flags, AUD_SEGMENT_PLAYING);
       expect(playing.toString(), contains('tempo: 120'));
@@ -247,76 +234,8 @@ void main() {
     });
   });
 
-  group('AudNativeTransportSnapshot', () {
-    late AudNativeTransportSnapshot nativeSnapshot;
-    setUp(() => nativeSnapshot = AudNativeTransportSnapshot(snapshot));
-    tearDown(() => nativeSnapshot.dispose());
-
-    test('agrees with the Dart conversions', () {
-      for (final offset in [0, 100, 255, 256, 400, 511]) {
-        expect(
-          nativeSnapshot.beatAtOffset(offset),
-          snapshot.beatAtOffset(offset),
-        );
-        expect(
-          nativeSnapshot.hostTimeAtOffset(offset),
-          snapshot.hostTimeAtOffset(offset),
-        );
-      }
-      for (final beat in [1.0, 2.0, 2.005, 2.015, 50.0]) {
-        expect(
-          nativeSnapshot.offsetAtBeat(AudBeats.ticks(beat)),
-          snapshot.offsetAtBeat(AudBeats.ticks(beat)),
-          reason: 'beat $beat',
-        );
-      }
-      for (final host in [1, 1000000000, 1001000000, 2000000000]) {
-        expect(
-          nativeSnapshot.offsetAtHostTime(host),
-          snapshot.offsetAtHostTime(host),
-        );
-      }
-      for (final stamp in [
-        const AudTimestamp.immediate(),
-        const AudTimestamp.sample(96010),
-        const AudTimestamp.sample(1),
-        const AudTimestamp.host(1000000000),
-        AudTimestamp.beat(2.005),
-        AudTimestamp.beat(1),
-      ]) {
-        expect(
-          nativeSnapshot.resolve(stamp),
-          snapshot.resolve(stamp),
-          reason: '$stamp',
-        );
-      }
-      expect(
-        AudTransportSnapshot.fromNative(nativeSnapshot.pointer.ref).segments,
-        snapshot.segments,
-      );
-    });
-
-    test('reports no segment, no host time and an empty snapshot', () {
-      final empty = AudNativeTransportSnapshot(
-        const AudTransportSnapshot(
-          time: AudStreamTime(frames: 8, sampleRate: 48000, samplePosition: 0),
-        ),
-      );
-      expect(empty.beatAtOffset(0), isNull);
-      expect(empty.hostTimeAtOffset(0), isNull);
-      expect(empty.offsetAtBeat(0), const AudResolution.unsupported());
-      empty.dispose();
-      empty.dispose();
-      expect(() => empty.beatAtOffset(0), throwsStateError);
-      expect(
-        () => empty.resolve(const AudTimestamp.immediate()),
-        throwsStateError,
-      );
-    });
-  });
-
   group('AudTransportRequest', () {
-    test('constructors, native and json round trip', () {
+    test('constructors, json round trip', () {
       final requests = [
         const AudTransportRequest.start(),
         const AudTransportRequest.stop(at: AudTimestamp.sample(5)),
@@ -329,18 +248,13 @@ void main() {
         AudTransportRequest.setLoop(start: 1, end: 5),
         const AudTransportRequest.setQuantum(4),
       ];
-      final pointer = calloc<native.AudTransportRequest>();
       for (final request in requests) {
-        request.writeTo(pointer);
-        expect(pointer.ref.struct_size, sizeOf<native.AudTransportRequest>());
-        expect(AudTransportRequest.fromNative(pointer.ref), request);
         expect(AudTransportRequest.fromJson(request.toJson()), request);
         expect(
           request.hashCode,
           AudTransportRequest.fromJson(request.toJson()).hashCode,
         );
       }
-      calloc.free(pointer);
       expect(AudTransportRequest.seek(4).beat, 4);
       expect(AudTransportRequest.setLoop(start: 1, end: 5).beatEnd, 5);
       expect(requests[0].toString(), contains('start'));

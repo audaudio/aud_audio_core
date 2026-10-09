@@ -4,11 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'dart:ffi';
-
 import 'package:aud_audio_core/aud_audio_core.dart';
-import 'package:aud_audio_core/aud_audio_core_bindings.dart' as native;
-import 'package:ffi/ffi.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -32,15 +28,6 @@ void main() {
     });
   });
 
-  group('AudClock', () {
-    test('nowNs() is monotonic', () {
-      final a = AudClock.nowNs();
-      final b = AudClock.nowNs();
-      expect(b, greaterThanOrEqualTo(a));
-      expect(a, greaterThan(0));
-    });
-  });
-
   group('AudBeats', () {
     test('converts beats and ticks with the CLAP factor', () {
       expect(AudBeats.factor, 1 << 31);
@@ -50,6 +37,21 @@ void main() {
   });
 
   group('AudTimestamp', () {
+    test('fromCodes(...) reads the fields of the native struct', () {
+      expect(
+        AudTimestamp.fromCodes(
+          domain: AUD_TIME_HOST,
+          value: 9,
+          source: AUD_TIME_SOURCE_ESTIMATED,
+        ),
+        const AudTimestamp.host(9, source: AudTimeSource.estimated),
+      );
+      expect(
+        AudTimestamp.fromCodes(domain: AUD_TIME_SAMPLE, value: 7),
+        const AudTimestamp.sample(7),
+      );
+    });
+
     test('constructors set the domain and the value', () {
       expect(const AudTimestamp.immediate().isImmediate, isTrue);
       expect(const AudTimestamp.sample(48000).value, 48000);
@@ -59,21 +61,6 @@ void main() {
       expect(AudTimestamp.beat(2).beats, 2);
       expect(const AudTimestamp.beatTicks(1 << 31).beats, 1);
       expect(() => host.beats, throwsStateError);
-    });
-
-    test('writeTo(pointer) and fromNative(native) round trip', () {
-      final pointer = calloc<native.AudTimestamp>();
-      for (final stamp in [
-        const AudTimestamp.immediate(),
-        const AudTimestamp.sample(7),
-        const AudTimestamp.host(9),
-        AudTimestamp.beat(1.25),
-      ]) {
-        stamp.writeTo(pointer);
-        expect(pointer.ref.struct_size, sizeOf<native.AudTimestamp>());
-        expect(AudTimestamp.fromNative(pointer.ref), stamp);
-      }
-      calloc.free(pointer);
     });
 
     test('toJson() and fromJson(json) round trip', () {
