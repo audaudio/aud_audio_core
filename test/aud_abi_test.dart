@@ -9,24 +9,6 @@ import 'package:test/test.dart';
 
 void main() {
   group('AudAbi', () {
-    test('major and minor match the native core', () {
-      expect(AudAbi.nativeMajor, AudAbi.major);
-      expect(AudAbi.nativeMinor, AudAbi.minor);
-      expect(AudAbi.major, 0);
-      expect(AudAbi.minor, 3);
-    });
-
-    test('struct sizes agree between Dart and C', () {
-      expect(AudAbi.dartStructSizes, AudAbi.nativeStructSizes);
-      expect(AudAbi.dartStructSizes.keys, AudAbi.structNames);
-      expect(AudAbi.structNames, hasLength(18));
-    });
-
-    test('nativeSizeOf(name) is -1 for an unknown struct', () {
-      expect(AudAbi.nativeSizeOf('AudNothing'), -1);
-      expect(AudAbi.nativeSizeOf('AudEvent'), 36);
-    });
-
     test('resultName(code) names every result code', () {
       final names = {
         AUD_OK: 'AUD_OK',
@@ -88,15 +70,6 @@ void main() {
           );
           expect(
             AudAbi.isCompatible(
-              packageMajor: named.packageMajor,
-              packageMinor: named.packageMinor,
-              engineMajor: named.engineMajor,
-              engineMinor: named.engineMinor,
-            ),
-            expected,
-          );
-          expect(
-            AudAbi.nativeIsCompatible(
               packageMajor: named.packageMajor,
               packageMinor: named.packageMinor,
               engineMajor: named.engineMajor,

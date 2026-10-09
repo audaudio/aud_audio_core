@@ -6,7 +6,7 @@
 
 import 'dart:ffi';
 
-import 'package:aud_audio_core/aud_audio_core.dart';
+import 'package:aud_audio_core/aud_audio_core_ffi.dart';
 import 'package:aud_audio_core/aud_audio_core_bindings.dart' as native;
 import 'package:ffi/ffi.dart';
 import 'package:test/test.dart';
@@ -32,7 +32,7 @@ void main() {
         ..struct_size = sizeOf<native.AudHostApi>()
         ..abi_major = AUD_ABI_VERSION_MAJOR
         ..abi_minor = AUD_ABI_VERSION_MINOR;
-      expect(host.ref.struct_size, AudAbi.nativeSizeOf('AudHostApi'));
+      expect(host.ref.struct_size, AudAbiNative.nativeSizeOf('AudHostApi'));
       expect(host.ref.register_node_type, nullptr);
       expect(host.ref.emit_event, nullptr);
       calloc.free(host);
@@ -45,7 +45,7 @@ void main() {
         ..num_params = 0;
       expect(
         descriptor.ref.struct_size,
-        AudAbi.nativeSizeOf('AudNodeDescriptor'),
+        AudAbiNative.nativeSizeOf('AudNodeDescriptor'),
       );
       expect(
         descriptor.ref.type_id.cast<Utf8>().toDartString(),

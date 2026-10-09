@@ -4,12 +4,9 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'dart:ffi';
 import 'dart:math';
 
-import 'package:ffi/ffi.dart';
-
-import 'aud_audio_core_bindings_generated.dart' as bindings;
+import 'aud_abi_constants.dart' as bindings;
 import 'aud_time.dart';
 
 // #############################################################################
@@ -111,19 +108,6 @@ class AudStreamTime {
     this.inputLatencyFrames = 0,
   });
 
-  /// The time from its native struct.
-  factory AudStreamTime.fromNative(bindings.AudStreamTime native) =>
-      AudStreamTime(
-        frames: native.frames,
-        sampleRate: native.sample_rate,
-        samplePosition: native.sample_position,
-        hostTimeNs: native.host_time_ns,
-        hostTimeSource: AudTimeSource.fromCode(native.host_time_source),
-        hostTimeAccuracyNs: native.host_time_accuracy_ns,
-        outputLatencyFrames: native.output_latency_frames,
-        inputLatencyFrames: native.input_latency_frames,
-      );
-
   /// The time from [toJson].
   factory AudStreamTime.fromJson(Map<String, Object?> json) => AudStreamTime(
     frames: (json['frames']! as num).toInt(),
@@ -167,24 +151,6 @@ class AudStreamTime {
   bool get hasHostTime => hostTimeSource != AudTimeSource.none;
 
   // ...........................................................................
-  /// Writes the time into its native struct.
-  void writeTo(Pointer<bindings.AudStreamTime> pointer) =>
-      writeToRef(pointer.ref);
-
-  /// Writes the time into a native struct reference.
-  void writeToRef(bindings.AudStreamTime ref) {
-    ref
-      ..struct_size = sizeOf<bindings.AudStreamTime>()
-      ..frames = frames
-      ..sample_rate = sampleRate
-      ..sample_position = samplePosition
-      ..host_time_ns = hostTimeNs
-      ..host_time_source = hostTimeSource.code
-      ..reserved = 0
-      ..host_time_accuracy_ns = hostTimeAccuracyNs
-      ..output_latency_frames = outputLatencyFrames
-      ..input_latency_frames = inputLatencyFrames;
-  }
 
   /// The time as JSON.
   Map<String, Object?> toJson() => {
@@ -247,25 +213,6 @@ class AudTransportSegment {
     this.loopStartTicks = 0,
     this.loopEndTicks = 0,
   });
-
-  /// The segment from its native struct.
-  factory AudTransportSegment.fromNative(bindings.AudTransportSegment native) =>
-      AudTransportSegment(
-        sampleOffset: native.sample_offset,
-        frames: native.frames,
-        beatTicks: native.beat,
-        tempo: native.tempo,
-        tempoIncrement: native.tempo_increment,
-        playing: native.flags & bindings.AUD_SEGMENT_PLAYING != 0,
-        looping: native.flags & bindings.AUD_SEGMENT_LOOPING != 0,
-        seek: native.flags & bindings.AUD_SEGMENT_SEEK != 0,
-        discontinuity: native.flags & bindings.AUD_SEGMENT_DISCONTINUITY != 0,
-        barStartTicks: native.bar_start,
-        timeSignatureNumerator: native.time_signature_numerator,
-        timeSignatureDenominator: native.time_signature_denominator,
-        loopStartTicks: native.loop_start,
-        loopEndTicks: native.loop_end,
-      );
 
   /// The segment from [toJson].
   factory AudTransportSegment.fromJson(
@@ -364,23 +311,6 @@ class AudTransportSegment {
     return (-tempo + sqrt(discriminant)) / tempoIncrement;
   }
 
-  /// Writes the segment into a native struct reference.
-  void writeToRef(bindings.AudTransportSegment ref) {
-    ref
-      ..struct_size = sizeOf<bindings.AudTransportSegment>()
-      ..sample_offset = sampleOffset
-      ..frames = frames
-      ..flags = flags
-      ..beat = beatTicks
-      ..tempo = tempo
-      ..tempo_increment = tempoIncrement
-      ..bar_start = barStartTicks
-      ..time_signature_numerator = timeSignatureNumerator
-      ..time_signature_denominator = timeSignatureDenominator
-      ..loop_start = loopStartTicks
-      ..loop_end = loopEndTicks;
-  }
-
   /// The segment as JSON, with beats as numbers.
   Map<String, Object?> toJson() => {
     'sampleOffset': sampleOffset,
@@ -443,18 +373,6 @@ class AudTransportSnapshot {
     this.segments = const [],
     this.capabilities = const AudTransportCapabilities(),
   });
-
-  /// The snapshot from its native struct.
-  factory AudTransportSnapshot.fromNative(
-    bindings.AudTransportSnapshot native,
-  ) => AudTransportSnapshot(
-    time: AudStreamTime.fromNative(native.time),
-    capabilities: AudTransportCapabilities.fromFlags(native.capabilities),
-    segments: [
-      for (var i = 0; i < native.num_segments; i++)
-        AudTransportSegment.fromNative(native.segments[i]),
-    ],
-  );
 
   /// The snapshot from [toJson].
   factory AudTransportSnapshot.fromJson(Map<String, Object?> json) =>
@@ -571,124 +489,6 @@ class AudTransportSnapshot {
 }
 
 // #############################################################################
-/// A transport snapshot in native memory, for the engine and for the
-/// cross-check of the Dart conversions against `aud_transport.h`.
-class AudNativeTransportSnapshot {
-  /// Copies [snapshot] into native memory.
-  AudNativeTransportSnapshot(AudTransportSnapshot snapshot)
-    : pointer = calloc<bindings.AudTransportSnapshot>(),
-      _segments = calloc<bindings.AudTransportSegment>(
-        max(snapshot.segments.length, 1),
-      ) {
-    for (var i = 0; i < snapshot.segments.length; i++) {
-      snapshot.segments[i].writeToRef(_segments[i]);
-    }
-    pointer.ref
-      ..struct_size = sizeOf<bindings.AudTransportSnapshot>()
-      ..capabilities = snapshot.capabilities.flags
-      ..num_segments = snapshot.segments.length
-      ..reserved = 0
-      ..segments = _segments;
-    snapshot.time.writeToRef(pointer.ref.time);
-  }
-
-  /// The native struct.
-  final Pointer<bindings.AudTransportSnapshot> pointer;
-  final Pointer<bindings.AudTransportSegment> _segments;
-  bool _disposed = false;
-
-  // ...........................................................................
-  /// The musical position at [sampleOffset] as the native core computes it;
-  /// null when the core reports no segment.
-  int? beatAtOffset(int sampleOffset) {
-    _checkNotDisposed();
-    final out = calloc<Int64>();
-    try {
-      final code = bindings.aud_core_transport_beat_at_offset(
-        pointer,
-        sampleOffset,
-        out,
-      );
-      return code == bindings.AUD_OK ? out.value : null;
-    } finally {
-      calloc.free(out);
-    }
-  }
-
-  /// The host time at [sampleOffset] as the native core computes it.
-  int? hostTimeAtOffset(int sampleOffset) {
-    _checkNotDisposed();
-    final out = calloc<Int64>();
-    try {
-      final code = bindings.aud_core_transport_host_time_at_offset(
-        pointer,
-        sampleOffset,
-        out,
-      );
-      return code == bindings.AUD_OK ? out.value : null;
-    } finally {
-      calloc.free(out);
-    }
-  }
-
-  /// [AudTransportSnapshot.offsetAtBeat] as the native core computes it.
-  AudResolution offsetAtBeat(int beatTicks) => _resolution(
-    (out) =>
-        bindings.aud_core_transport_offset_at_beat(pointer, beatTicks, out),
-  );
-
-  /// [AudTransportSnapshot.offsetAtHostTime] as the native core computes
-  /// it.
-  AudResolution offsetAtHostTime(int hostTimeNs) => _resolution(
-    (out) => bindings.aud_core_transport_offset_at_host_time(
-      pointer,
-      hostTimeNs,
-      out,
-    ),
-  );
-
-  /// [AudTransportSnapshot.resolve] as the native core computes it.
-  AudResolution resolve(AudTimestamp timestamp) {
-    final native = calloc<bindings.AudTimestamp>();
-    try {
-      timestamp.writeTo(native);
-      return _resolution(
-        (out) => bindings.aud_core_transport_resolve(pointer, native, out),
-      );
-    } finally {
-      calloc.free(native);
-    }
-  }
-
-  AudResolution _resolution(int Function(Pointer<Int64> out) call) {
-    _checkNotDisposed();
-    final out = calloc<Int64>();
-    try {
-      final code = call(out);
-      return AudResolution.fromCode(
-        code,
-        code == bindings.AUD_OK ? out.value : 0,
-      );
-    } finally {
-      calloc.free(out);
-    }
-  }
-
-  // ...........................................................................
-  /// Frees the native memory.
-  void dispose() {
-    if (_disposed) return;
-    _disposed = true;
-    calloc.free(_segments);
-    calloc.free(pointer);
-  }
-
-  void _checkNotDisposed() {
-    if (_disposed) throw StateError('The snapshot is disposed');
-  }
-}
-
-// #############################################################################
 /// The requests to a transport.
 enum AudTransportRequestType {
   /// Start playing.
@@ -797,18 +597,6 @@ class AudTransportRequest {
   const AudTransportRequest.setQuantum(double beats)
     : this(type: AudTransportRequestType.setQuantum, value: beats);
 
-  /// The request from its native struct.
-  factory AudTransportRequest.fromNative(bindings.AudTransportRequest native) =>
-      AudTransportRequest(
-        type: AudTransportRequestType.fromCode(native.type),
-        at: AudTimestamp.fromNative(native.at),
-        beatTicks: native.beat,
-        beatEndTicks: native.beat_end,
-        value: native.value,
-        numerator: native.numerator,
-        denominator: native.denominator,
-      );
-
   /// The request from [toJson].
   factory AudTransportRequest.fromJson(Map<String, Object?> json) =>
       AudTransportRequest(
@@ -854,24 +642,6 @@ class AudTransportRequest {
   double get beatEnd => AudBeats.beats(beatEndTicks);
 
   // ...........................................................................
-  /// Writes the request into its native struct.
-  void writeTo(Pointer<bindings.AudTransportRequest> pointer) {
-    final ref = pointer.ref;
-    ref
-      ..struct_size = sizeOf<bindings.AudTransportRequest>()
-      ..type = type.code
-      ..beat = beatTicks
-      ..beat_end = beatEndTicks
-      ..value = value
-      ..numerator = numerator
-      ..denominator = denominator;
-    ref.at
-      ..struct_size = sizeOf<bindings.AudTimestamp>()
-      ..domain = at.domain.code
-      ..source = at.source.code
-      ..flags = 0
-      ..value = at.value;
-  }
 
   /// The request as JSON.
   Map<String, Object?> toJson() => {

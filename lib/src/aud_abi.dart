@@ -4,15 +4,12 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'dart:ffi';
-
-import 'package:ffi/ffi.dart';
-
-import 'aud_audio_core_bindings_generated.dart' as bindings;
+import 'aud_abi_constants.dart' as bindings;
 
 // #############################################################################
 /// The version of the C ABI in `src/aud_abi.h`, its compatibility rule and
-/// the checks that the Dart contracts agree with the native core.
+/// the names of its result codes and thread tags; [AudAbiNative] checks that
+/// the Dart contracts agree with the native core.
 abstract final class AudAbi {
   /// The major ABI version the Dart side was written against.
   static const int major = bindings.AUD_ABI_VERSION_MAJOR;
@@ -41,52 +38,6 @@ abstract final class AudAbi {
     'AudHostApi',
     'AudRenderRequest',
   ];
-
-  // ...........................................................................
-  /// The major ABI version compiled into the native core library.
-  static int get nativeMajor => bindings.aud_abi_version_major();
-
-  /// The minor ABI version compiled into the native core library.
-  static int get nativeMinor => bindings.aud_abi_version_minor();
-
-  // ...........................................................................
-  /// The sizes of the ABI structs as the Dart side lays them out, by name.
-  static Map<String, int> get dartStructSizes => {
-    'AudTimestamp': sizeOf<bindings.AudTimestamp>(),
-    'AudStreamTime': sizeOf<bindings.AudStreamTime>(),
-    'AudTransportSegment': sizeOf<bindings.AudTransportSegment>(),
-    'AudTransportSnapshot': sizeOf<bindings.AudTransportSnapshot>(),
-    'AudTransportRequest': sizeOf<bindings.AudTransportRequest>(),
-    'AudTransportProviderVTable': sizeOf<bindings.AudTransportProviderVTable>(),
-    'AudEvent': sizeOf<bindings.AudEvent>(),
-    'AudBusDescriptor': sizeOf<bindings.AudBusDescriptor>(),
-    'AudEventPortDescriptor': sizeOf<bindings.AudEventPortDescriptor>(),
-    'AudParamDescriptor': sizeOf<bindings.AudParamDescriptor>(),
-    'AudStringKeyDescriptor': sizeOf<bindings.AudStringKeyDescriptor>(),
-    'AudAudioBus': sizeOf<bindings.AudAudioBus>(),
-    'AudPrepareInfo': sizeOf<bindings.AudPrepareInfo>(),
-    'AudProcessContext': sizeOf<bindings.AudProcessContext>(),
-    'AudNodeVTable': sizeOf<bindings.AudNodeVTable>(),
-    'AudNodeDescriptor': sizeOf<bindings.AudNodeDescriptor>(),
-    'AudHostApi': sizeOf<bindings.AudHostApi>(),
-    'AudRenderRequest': sizeOf<bindings.AudRenderRequest>(),
-  };
-
-  /// The sizes of the ABI structs as the C compiler lays them out, by name.
-  static Map<String, int> get nativeStructSizes => {
-    for (final name in structNames) name: nativeSizeOf(name),
-  };
-
-  /// The size of the ABI struct [name] as the C compiler lays it out, or -1
-  /// for a name the native core does not know.
-  static int nativeSizeOf(String name) {
-    final native = name.toNativeUtf8();
-    try {
-      return bindings.aud_abi_sizeof(native.cast());
-    } finally {
-      calloc.free(native);
-    }
-  }
 
   // ...........................................................................
   /// The name of a result code of the ABI, e.g. `AUD_ERROR_QUEUE_FULL`.
@@ -139,19 +90,4 @@ abstract final class AudAbi {
     if (packageMajor == 0) return packageMinor == engineMinor;
     return packageMinor <= engineMinor;
   }
-
-  /// [isCompatible] as the native core decides it.
-  static bool nativeIsCompatible({
-    required int packageMajor,
-    required int packageMinor,
-    required int engineMajor,
-    required int engineMinor,
-  }) =>
-      bindings.aud_abi_compatible(
-        packageMajor,
-        packageMinor,
-        engineMajor,
-        engineMinor,
-      ) !=
-      0;
 }

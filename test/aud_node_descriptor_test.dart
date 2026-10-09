@@ -4,17 +4,10 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'dart:ffi';
-
 import 'package:aud_audio_core/aud_audio_core.dart';
-import 'package:aud_audio_core/aud_audio_core_bindings.dart' as native;
-import 'package:ffi/ffi.dart';
 import 'package:test/test.dart';
 
-import 'fake_host.dart';
-
 void main() {
-  _nativeExtras();
   const descriptor = AudNodeDescriptor(
     typeId: 'aud.test.node',
     name: 'Test',
@@ -65,59 +58,10 @@ void main() {
       expect(minimal.abiMajor, AudAbi.major);
       expect(minimal, isNot(descriptor));
     });
-
-    test('fromNative(native) reads the gain node of the core', () {
-      final host = FakeHost();
-      AudCoreGain.register(host.api);
-      final gain = AudNodeDescriptor.fromNative(host.descriptors.single.ref);
-      host.dispose();
-      expect(gain.typeId, AudCoreGain.typeId);
-      expect(gain.name, 'Gain');
-      expect(gain.vendor, 'Audanika');
-      expect(gain.abiMajor, AudAbi.major);
-      expect(gain.abiMinor, AudAbi.minor);
-      expect(
-        gain.capabilities,
-        const AudNodeCapabilities(
-          inPlace: true,
-          variableBlock: true,
-          events: true,
-          state: true,
-          latency: true,
-          tail: true,
-        ),
-      );
-      expect(gain.stateVersion, AudCoreGain.stateVersion);
-      expect(
-        gain.inputBuses.single,
-        const AudBusDescriptor(id: 'in', name: 'Input'),
-      );
-      expect(gain.outputBuses.single.id, 'out');
-      expect(
-        gain.eventInputs.single,
-        const AudEventPortDescriptor(
-          id: 'events',
-          name: 'Events',
-          control: true,
-        ),
-      );
-      expect(gain.eventOutputs, isEmpty);
-      expect(
-        gain.params.single,
-        const AudParamDescriptor(
-          id: 'gain',
-          name: 'Gain',
-          max: 2,
-          defaultValue: 1,
-          ramped: true,
-        ),
-      );
-      expect(gain.stringKeys, isEmpty);
-    });
   });
 
   group('AudBusDescriptor', () {
-    test('flags, native and json', () {
+    test('flags and json', () {
       const bus = AudBusDescriptor(
         id: 'sc',
         sidechain: true,
@@ -131,16 +75,6 @@ void main() {
       expect(AudBusDescriptor.fromJson(bus.toJson()), bus);
       expect(bus.hashCode, AudBusDescriptor.fromJson(bus.toJson()).hashCode);
       expect(bus.toString(), contains('sc'));
-      final pointer = calloc<native.AudBusDescriptor>();
-      pointer.ref
-        ..flags = bus.flags
-        ..min_channels = 2
-        ..max_channels = 2
-        ..default_channels = 2;
-      final read = AudBusDescriptor.fromNative(pointer.ref);
-      expect(read.id, '');
-      expect(read.sidechain, isTrue);
-      calloc.free(pointer);
       expect(AudBusDescriptor.fromJson({'id': 'x'}).main, isTrue);
     });
   });
@@ -218,43 +152,6 @@ void main() {
       expect(all.hashCode, all.flags);
       expect(all.toString(), contains('inPlace'));
       expect(const AudNodeCapabilities().flags, 0);
-    });
-  });
-}
-
-void _nativeExtras() {
-  group('AudNodeDescriptor.fromNative with event outputs and string keys', () {
-    test('reads every array', () {
-      final pointer = calloc<native.AudNodeDescriptor>();
-      final outlet = calloc<native.AudEventPortDescriptor>();
-      final key = calloc<native.AudStringKeyDescriptor>();
-      final outletId = 'out'.toNativeUtf8();
-      final keyId = 'file'.toNativeUtf8();
-      outlet.ref
-        ..id = outletId.cast()
-        ..flags = AUD_EVENT_PORT_CONTROL;
-      key.ref
-        ..key = 7
-        ..id = keyId.cast();
-      pointer.ref
-        ..num_event_outputs = 1
-        ..event_outputs = outlet
-        ..num_string_keys = 1
-        ..string_keys = key;
-      final descriptor = AudNodeDescriptor.fromNative(pointer.ref);
-      expect(
-        descriptor.eventOutputs.single,
-        const AudEventPortDescriptor(id: 'out', control: true),
-      );
-      expect(
-        descriptor.stringKeys.single,
-        const AudStringKeyDescriptor(key: 7, id: 'file'),
-      );
-      calloc.free(outletId);
-      calloc.free(keyId);
-      calloc.free(outlet);
-      calloc.free(key);
-      calloc.free(pointer);
     });
   });
 }

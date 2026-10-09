@@ -4,12 +4,8 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'dart:ffi';
-
 import 'package:aud_audio_core/aud_audio_core.dart';
-import 'package:aud_audio_core/aud_audio_core_bindings.dart' as native;
 import 'package:aud_midi_standard/aud_midi_standard.dart';
-import 'package:ffi/ffi.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -29,9 +25,8 @@ void main() {
   );
 
   group('AudEvent', () {
-    test('writeTo(pointer) and fromNative(native) round trip', () {
-      final pointer = calloc<native.AudEvent>();
-      final events = <AudEvent>[
+    test('toJson() and fromJson(json) round trip', () {
+      for (final event in <AudEvent>[
         ump,
         control,
         AudControlEvent(control: 1, value: -5),
@@ -40,21 +35,32 @@ void main() {
         AudControlEvent(control: 1, value: null),
         AudControlEvent(control: 1, value: AudImpulse.instance),
         param,
-      ];
-      for (final event in events) {
-        event.writeTo(pointer);
-        expect(pointer.ref.struct_size, sizeOf<native.AudEvent>());
-        expect(AudEvent.fromNative(pointer.ref), event, reason: '$event');
+      ]) {
         expect(AudEvent.fromJson(event.toJson()), event, reason: '$event');
         expect(event.hashCode, AudEvent.fromJson(event.toJson()).hashCode);
       }
-      expect(pointer.ref.flags, 0);
-      control.writeTo(pointer);
-      expect(pointer.ref.flags, AUD_EVENT_FLAG_LIVE);
-      pointer.ref.type = 99;
-      expect(() => AudEvent.fromNative(pointer.ref), throwsArgumentError);
-      calloc.free(pointer);
       expect(() => AudEvent.fromJson({'type': 'x'}), throwsFormatException);
+    });
+
+    test('fromWords(...) reads the fields of the native struct', () {
+      for (final event in [ump, control, param]) {
+        expect(
+          AudEvent.fromWords(
+            type: event.type,
+            words: event.words,
+            sampleOffset: event.sampleOffset,
+            port: event.port,
+            flags: event.flags,
+          ),
+          event,
+        );
+      }
+      expect(control.flags, AUD_EVENT_FLAG_LIVE);
+      expect(param.flags, 0);
+      expect(
+        () => AudEvent.fromWords(type: 99, words: const [0, 0, 0, 0]),
+        throwsArgumentError,
+      );
     });
 
     test('float bits round trip', () {

@@ -4,14 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'dart:ffi';
-
-import 'package:ffi/ffi.dart';
-
-import 'aud_audio_core_bindings_generated.dart' as bindings;
-
-String _text(Pointer<Char> pointer) =>
-    pointer == nullptr ? '' : pointer.cast<Utf8>().toDartString();
+import 'aud_abi_constants.dart' as bindings;
 
 bool _listEquals<T>(List<T> a, List<T> b) {
   if (a.length != b.length) return false;
@@ -35,19 +28,6 @@ class AudBusDescriptor {
     this.maxChannels = 16,
     this.defaultChannels = 2,
   });
-
-  /// The bus from its native struct.
-  factory AudBusDescriptor.fromNative(bindings.AudBusDescriptor native) =>
-      AudBusDescriptor(
-        id: _text(native.id),
-        name: _text(native.name),
-        main: native.flags & bindings.AUD_BUS_MAIN != 0,
-        sidechain: native.flags & bindings.AUD_BUS_SIDECHAIN != 0,
-        optional: native.flags & bindings.AUD_BUS_OPTIONAL != 0,
-        minChannels: native.min_channels,
-        maxChannels: native.max_channels,
-        defaultChannels: native.default_channels,
-      );
 
   /// The bus from [toJson].
   factory AudBusDescriptor.fromJson(Map<String, Object?> json) =>
@@ -134,16 +114,6 @@ class AudEventPortDescriptor {
     this.control = false,
   });
 
-  /// The port from its native struct.
-  factory AudEventPortDescriptor.fromNative(
-    bindings.AudEventPortDescriptor native,
-  ) => AudEventPortDescriptor(
-    id: _text(native.id),
-    name: _text(native.name),
-    midi: native.flags & bindings.AUD_EVENT_PORT_MIDI != 0,
-    control: native.flags & bindings.AUD_EVENT_PORT_CONTROL != 0,
-  );
-
   /// The port from [toJson].
   factory AudEventPortDescriptor.fromJson(Map<String, Object?> json) =>
       AudEventPortDescriptor(
@@ -212,24 +182,6 @@ class AudParamDescriptor {
     this.hidden = false,
     this.steps = 0,
   });
-
-  /// The parameter from its native struct.
-  factory AudParamDescriptor.fromNative(bindings.AudParamDescriptor native) =>
-      AudParamDescriptor(
-        id: _text(native.id),
-        name: _text(native.name),
-        unit: _text(native.unit),
-        min: native.min_value,
-        max: native.max_value,
-        defaultValue: native.default_value,
-        automatable: native.flags & bindings.AUD_PARAM_AUTOMATABLE != 0,
-        ramped: native.flags & bindings.AUD_PARAM_RAMPED != 0,
-        stepped: native.flags & bindings.AUD_PARAM_STEPPED != 0,
-        logarithmic: native.flags & bindings.AUD_PARAM_LOGARITHMIC != 0,
-        boolean: native.flags & bindings.AUD_PARAM_BOOLEAN != 0,
-        hidden: native.flags & bindings.AUD_PARAM_HIDDEN != 0,
-        steps: native.steps,
-      );
 
   /// The parameter from [toJson].
   factory AudParamDescriptor.fromJson(Map<String, Object?> json) =>
@@ -351,15 +303,6 @@ class AudStringKeyDescriptor {
     required this.id,
     this.name = '',
   });
-
-  /// The key from its native struct.
-  factory AudStringKeyDescriptor.fromNative(
-    bindings.AudStringKeyDescriptor native,
-  ) => AudStringKeyDescriptor(
-    key: native.key,
-    id: _text(native.id),
-    name: _text(native.name),
-  );
 
   /// The key from [toJson].
   factory AudStringKeyDescriptor.fromJson(Map<String, Object?> json) =>
@@ -541,43 +484,6 @@ class AudNodeDescriptor {
     this.params = const [],
     this.stringKeys = const [],
   });
-
-  /// The descriptor from its native struct.
-  factory AudNodeDescriptor.fromNative(bindings.AudNodeDescriptor native) =>
-      AudNodeDescriptor(
-        typeId: _text(native.type_id),
-        name: _text(native.name),
-        vendor: _text(native.vendor),
-        version: native.version,
-        abiMajor: native.abi_major,
-        abiMinor: native.abi_minor,
-        capabilities: AudNodeCapabilities.fromFlags(native.capabilities),
-        stateVersion: native.state_version,
-        inputBuses: [
-          for (var i = 0; i < native.num_input_buses; i++)
-            AudBusDescriptor.fromNative(native.input_buses[i]),
-        ],
-        outputBuses: [
-          for (var i = 0; i < native.num_output_buses; i++)
-            AudBusDescriptor.fromNative(native.output_buses[i]),
-        ],
-        eventInputs: [
-          for (var i = 0; i < native.num_event_inputs; i++)
-            AudEventPortDescriptor.fromNative(native.event_inputs[i]),
-        ],
-        eventOutputs: [
-          for (var i = 0; i < native.num_event_outputs; i++)
-            AudEventPortDescriptor.fromNative(native.event_outputs[i]),
-        ],
-        params: [
-          for (var i = 0; i < native.num_params; i++)
-            AudParamDescriptor.fromNative(native.params[i]),
-        ],
-        stringKeys: [
-          for (var i = 0; i < native.num_string_keys; i++)
-            AudStringKeyDescriptor.fromNative(native.string_keys[i]),
-        ],
-      );
 
   /// The descriptor from [toJson].
   factory AudNodeDescriptor.fromJson(Map<String, Object?> json) {

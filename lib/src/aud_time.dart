@@ -4,9 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import 'dart:ffi';
-
-import 'aud_audio_core_bindings_generated.dart' as bindings;
+import 'aud_abi_constants.dart' as bindings;
 
 // #############################################################################
 /// The time domains of decision time-001. Sample time is always available
@@ -67,14 +65,6 @@ enum AudTimeSource {
 }
 
 // #############################################################################
-/// The monotonic host clock of decision time-001, `aud_clock.h` of the
-/// native core: the clock the engine measures against on every platform.
-abstract final class AudClock {
-  /// The host time now, in nanoseconds.
-  static int nowNs() => bindings.aud_core_clock_now_ns();
-}
-
-// #############################################################################
 /// Beats as fixed point: one beat is [factor] ticks, as CLAP does.
 abstract final class AudBeats {
   /// The ticks per beat.
@@ -113,13 +103,17 @@ class AudTimestamp {
   /// A musical position of [beats].
   AudTimestamp.beat(double beats) : this.beatTicks(AudBeats.ticks(beats));
 
-  /// A timestamp from its native struct.
-  factory AudTimestamp.fromNative(bindings.AudTimestamp native) =>
-      AudTimestamp._(
-        AudTimeDomain.fromCode(native.domain),
-        native.value,
-        AudTimeSource.fromCode(native.source),
-      );
+  /// A timestamp from the fields of its native struct: the `AUD_TIME_*`
+  /// [domain], the [value] and the `AUD_TIME_SOURCE_*` [source].
+  factory AudTimestamp.fromCodes({
+    required int domain,
+    required int value,
+    int source = bindings.AUD_TIME_SOURCE_NONE,
+  }) => AudTimestamp._(
+    AudTimeDomain.fromCode(domain),
+    value,
+    AudTimeSource.fromCode(source),
+  );
 
   /// A timestamp from [toJson].
   factory AudTimestamp.fromJson(Map<String, Object?> json) {
@@ -151,17 +145,6 @@ class AudTimestamp {
       throw StateError('Not a beat timestamp: $this');
     }
     return AudBeats.beats(value);
-  }
-
-  // ...........................................................................
-  /// Writes the timestamp into its native struct.
-  void writeTo(Pointer<bindings.AudTimestamp> pointer) {
-    pointer.ref
-      ..struct_size = sizeOf<bindings.AudTimestamp>()
-      ..domain = domain.code
-      ..source = source.code
-      ..flags = 0
-      ..value = value;
   }
 
   /// The timestamp as JSON.
