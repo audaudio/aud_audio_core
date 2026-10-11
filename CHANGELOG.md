@@ -7,11 +7,25 @@
 - Add ABI 0.4 with tasks, loads, caches and messages
 
 - AudHostApi minor 4: post_task, begin_load, load_progress, end_load, load_cancelled, register_cache, unregister_cache, cache_changed, cache_budget, report and emit_message
+
 - AUD_EVENT_MESSAGE with AudMessage and AudMessageArg, AUD_NODE_CAP_MESSAGES, AUD_ERROR_CANCELLED and AUD_ERROR_UNDERFLOW, the OSC tags h, d, s and b
+
 - AudTask and AudCacheVTable for the worker threads and the sample cache of lifecycle-001
+
 - The engine reads get_tail after prepare and at every commit; end_load takes a message for a load that ended well
+
 - AudMessageCommand, the message route /graph/<g>/node/<n>/msg and AudOscRouter.resolveMessage
+
 - AudNodeCapabilities.messages and the new struct sizes and result names
+
+- Add the thread and lifetime rules of ABI 0.4
+
+- aud_abi.h: the thread tags [worker] and [any thread]; AudTask.run, trim, post_task, cache_changed, the load calls, alloc, free and log name the threads the engine calls them on
+- aud_abi.h: when tasks run, how loads end, how long caches stay registered, where report and emit_message work and what emit_message copies and drops
+- Cite lifecycle-002 and osc-002 where they decided: aud_abi.h, the Dart docs and the message tests
+- README.md names the result codes of 0.4, the message events, the argument tags and the message route; README.de.md catches up with ABI 0.4
+- index.jsonc names the message events and AudMessageCommand
+- The capabilities test compares the whole JSON list
 
 ## 0.4.0 - 2026-10-09
 

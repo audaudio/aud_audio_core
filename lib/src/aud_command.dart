@@ -260,7 +260,7 @@ final class AudTransportCommand extends AudCommand {
 }
 
 // #############################################################################
-/// Sends an OSC message to a node that takes messages (osc-001): the path
+/// Sends an OSC message to a node that takes messages (osc-002): the path
 /// below the node's route, e.g. `/region0/ampeg_attack` for
 /// `/graph/1/node/2/msg/region0/ampeg_attack`, with its arguments. The
 /// engine delivers it on the audio thread at its time, ordered with the

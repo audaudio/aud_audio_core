@@ -149,8 +149,20 @@ void main() {
       expect(all.flags, (1 << 12) - 1);
       expect(AudNodeCapabilities.fromFlags(all.flags), all);
       expect(AudNodeCapabilities.fromJson(all.toJson()), all);
-      expect(all.toJson(), hasLength(12));
-      expect(all.toJson(), contains('messages'));
+      expect(all.toJson(), [
+        'inPlace',
+        'variableBlock',
+        'events',
+        'strings',
+        'state',
+        'latency',
+        'tail',
+        'transport',
+        'eventOutput',
+        'resetOnStop',
+        'resetOnSeek',
+        'messages',
+      ]);
       expect(all.hashCode, all.flags);
       expect(all.toString(), contains('inPlace'));
       expect(const AudNodeCapabilities().flags, 0);

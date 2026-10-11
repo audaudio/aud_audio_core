@@ -10,9 +10,9 @@
   "domain": [
     "C ABI 0.4: aud_abi.h (descriptors, events, process context, node vtable, host api with worker tasks, loads, caches, reports and messages, transport provider vtable, render request)",
     "Timing: aud_clock.h, aud_time_filter.h (sample-to-host fit, reset rules), aud_transport.h (beat/sample/host conversions)",
-    "Events: UMP via aud_midi_standard (aud_ump.h), control and parameter events",
+    "Events: UMP via aud_midi_standard (aud_ump.h), control, parameter and message events (AudMessage, OSC tags i f h d s b T F N I)",
     "C++ node helpers: aud_node_base.hpp (sub-range splitting, ramps), aud_param_ramp.hpp, aud_fixed_block_adapter.hpp, aud_spsc_queue.hpp",
-    "Dart contracts: AudAbi, AudTimestamp, AudTransportSnapshot, AudTimeFilter, AudEvent, AudNodeDescriptor, AudNodePreset (JSON schema), AudOscAddress/Pattern/Message, AudCommand, AudOscRouter, AudOscAdapter",
+    "Dart contracts: AudAbi, AudTimestamp, AudTransportSnapshot, AudTimeFilter, AudEvent, AudNodeDescriptor, AudNodePreset (JSON schema), AudOscAddress/Pattern/Message, AudCommand, AudMessageCommand (route /graph/<g>/node/<n>/msg), AudOscRouter, AudOscAdapter",
     "Reference node aud.core.gain; notices convention and scripts/check-notices.js"
   ],
   "interfaces": {

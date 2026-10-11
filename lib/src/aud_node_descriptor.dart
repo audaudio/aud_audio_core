@@ -427,7 +427,7 @@ class AudNodeCapabilities {
   /// The engine resets the node when the transport seeks.
   final bool resetOnSeek;
 
-  /// The node takes OSC messages and answers them (osc-001).
+  /// The node takes OSC messages and answers them (osc-002).
   final bool messages;
 
   /// The `AUD_NODE_CAP_*` flags.

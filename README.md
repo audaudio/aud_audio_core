@@ -11,9 +11,10 @@ and never linked:
 
 - `aud_abi.h` — the versioned C ABI (abi-001): sized structs, result codes
   (since 0.3 also cycle, format, lookahead, capacity, retired and overload
-  for the graph), capabilities, thread affinity tags, bus, event port,
-  parameter and string
-  key descriptors, `AudEvent` (UMP, control and parameter events),
+  for the graph, since 0.4 cancelled and underflow), capabilities, thread
+  affinity tags, bus, event port, parameter and string key descriptors,
+  `AudEvent` (UMP, control, parameter and message events), `AudMessage`
+  with the OSC 1.1 argument tags i, f, h, d, s, b, T, F, N and I,
   `AudProcessContext` with planar buses, `AudTimestamp` with the domains
   immediate, sample, host and beat, `AudStreamTime`, the transport segments,
   snapshot, requests and provider vtable (time-001), the node vtable with
@@ -26,7 +27,9 @@ and never linked:
   process (`register_cache`, `cache_changed`, `cache_budget`), per-block
   reports of a node and `emit_message`; a node with
   `AUD_NODE_CAP_MESSAGES` takes OSC messages as `AUD_EVENT_MESSAGE` events
-  (`AudMessage`, `AudMessageArg`).
+  (`AudMessage`, `AudMessageArg`). The thread tags `[worker]` and
+  `[any thread]` say what runs on the workers and what every thread may
+  call.
 - `aud_clock.h` — the monotonic host clock.
 - `aud_time_filter.h` — the sample-to-host-time filter with its reset rules.
 - `aud_transport.h` — beat, sample and host time conversions over a snapshot.
@@ -47,6 +50,12 @@ reference node `aud.core.gain` through `aud_audio_core_register`.
 the conversions from and to the ABI structs (`native.toDart()`,
 `event.writeTo(pointer)`), `AudTimeFilter`, `AudParamRamp`,
 `AudFixedBlockAdapter`, `AudCoreGain` and `AudNativeTransportSnapshot`.
+
+A node with `AudNodeCapabilities.messages` gets the message route
+`AudOscAddress.message` (`/graph/<g>/node/<n>/msg`, osc-002):
+`AudOscRouter.resolveMessage` finds the `AudMessageTarget`s of an address
+below it and the path that remains, and `AudOscAdapter` turns the message
+into an `AudMessageCommand`.
 
 ```dart
 import 'package:aud_audio_core/aud_audio_core_ffi.dart';

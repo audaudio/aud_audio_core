@@ -142,7 +142,7 @@ final class AudStringTarget extends AudOscTarget {
   final int key;
 }
 
-/// The message route of a node that takes messages (osc-001): a message
+/// The message route of a node that takes messages (osc-002): a message
 /// to an address below it reaches the node with the rest of the address as
 /// its path.
 final class AudMessageTarget extends AudOscTarget {

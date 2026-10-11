@@ -54,7 +54,7 @@ class AudOscAddress {
     required String outlet,
   }) => AudOscAddress('/graph/$graphId/node/$nodeId/outlet/$outlet');
 
-  /// The route of the messages of a node (osc-001): a message to an address
+  /// The route of the messages of a node (osc-002): a message to an address
   /// below it reaches the node with the rest of the address as its path.
   factory AudOscAddress.message({
     required Object graphId,

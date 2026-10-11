@@ -312,7 +312,7 @@ void main() {
     });
   });
 
-  group('messages (osc-001)', () {
+  group('messages (osc-002)', () {
     setUp(() {
       router.registerNode(graph: 1, node: 4, handle: 40, descriptor: sampler);
       router.registerNode(graph: 1, node: 5, handle: 50, descriptor: sampler);
