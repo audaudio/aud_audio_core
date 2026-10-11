@@ -21,11 +21,23 @@
 - Add the thread and lifetime rules of ABI 0.4
 
 - aud_abi.h: the thread tags [worker] and [any thread]; AudTask.run, trim, post_task, cache_changed, the load calls, alloc, free and log name the threads the engine calls them on
+
 - aud_abi.h: when tasks run, how loads end, how long caches stay registered, where report and emit_message work and what emit_message copies and drops
+
 - Cite lifecycle-002 and osc-002 where they decided: aud_abi.h, the Dart docs and the message tests
+
 - README.md names the result codes of 0.4, the message events, the argument tags and the message route; README.de.md catches up with ABI 0.4
+
 - index.jsonc names the message events and AudMessageCommand
+
 - The capabilities test compares the whole JSON list
+
+- Add the message limits of osc-002 to AudMessage
+
+- AudMessage holds at most 16 arguments and 1000 bytes of path, type tags and values (osc-002)
+- emit_message drops a message with more bytes, an unknown type tag or a full queue
+- load_cancelled reads as cancelled once the engine removes the instance
+- A task may call the AudHostApi it was posted through until it returns
 
 ## 0.4.0 - 2026-10-09
 

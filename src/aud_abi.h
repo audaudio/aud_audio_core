@@ -384,8 +384,11 @@ typedef struct AudMessageArg {
 
 // An OSC message to or from a node (osc-002): the path below the node's
 // route, e.g. "/region0/ampeg_attack" for the route
-// /graph/1/node/2/msg/region0/ampeg_attack, and its arguments. The side
-// that hands a message over owns it; the receiver copies what it keeps.
+// /graph/1/node/2/msg/region0/ampeg_attack, and its arguments. A message
+// holds at most 16 arguments and 1000 bytes of path, type tags and values,
+// the terminators of the texts and the sizes of the blobs included. The
+// side that hands a message over owns it; the receiver copies what it
+// keeps.
 typedef struct AudMessage {
   uint32_t struct_size;
   uint32_t num_args;
@@ -703,11 +706,9 @@ struct AudHostApi {
   // [realtime] Sends a message of the instance to the control thread, e.g.
   // the reply to an AUD_EVENT_MESSAGE. Works only inside the process call
   // of the instance; the engine ignores other calls. The engine copies the
-  // message before it returns. A message holds at most 1000 bytes of path
-  // and arguments, with their type tags, terminators and blob sizes
-  // (osc-002); one the engine cannot hold - too large, with an unknown type
-  // tag, or while its queue is full - is dropped and counted as
-  // AUD_ERROR_QUEUE_FULL.
+  // message before it returns. A message it cannot take - more bytes than
+  // an AudMessage holds, an unknown type tag, a full queue - is dropped and
+  // counted as AUD_ERROR_QUEUE_FULL.
   void (*emit_message)(void* host, void* instance, const AudMessage* message);
 };
 
