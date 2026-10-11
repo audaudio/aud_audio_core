@@ -4,7 +4,7 @@ Core of the Audanika Audio Engine: the C ABI, buffer and event formats, node con
 
 Part of the Audanika Audio Engine; planned in [aud_audio_pm](https://github.com/audaudio/aud_audio_pm).
 
-## What the package holds (ABI 0.3, tickets 18 and 19)
+## What the package holds (ABI 0.4, tickets 18, 19 and 25)
 
 Header-only C and C++ in `src/`, included by every package of the family
 and never linked:
@@ -20,6 +20,13 @@ and never linked:
   reset reasons, latency, tail and state blobs, `AudHostApi` and the
   `AudRenderRequest` of the headless host (plugin-002). In major 0 the
   minors must match exactly; from 1.0 on an engine accepts older minors.
+  Since 0.4 (ticket 25, lifecycle-002, osc-002) the host api offers worker
+  tasks (`post_task`, also from the audio thread), loads with ids,
+  progress and cancellation, sample caches under the budget of the
+  process (`register_cache`, `cache_changed`, `cache_budget`), per-block
+  reports of a node and `emit_message`; a node with
+  `AUD_NODE_CAP_MESSAGES` takes OSC messages as `AUD_EVENT_MESSAGE` events
+  (`AudMessage`, `AudMessageArg`).
 - `aud_clock.h` — the monotonic host clock.
 - `aud_time_filter.h` — the sample-to-host-time filter with its reset rules.
 - `aud_transport.h` — beat, sample and host time conversions over a snapshot.
@@ -44,7 +51,7 @@ the conversions from and to the ABI structs (`native.toDart()`,
 ```dart
 import 'package:aud_audio_core/aud_audio_core_ffi.dart';
 
-AudAbi.major;                              // 0; AudAbi.minor is 3
+AudAbi.major;                              // 0; AudAbi.minor is 4
 AudAbiNative.dartStructSizes == AudAbiNative.nativeStructSizes;
 
 final at = AudTimestamp.beat(4);           // or .sample(n), .host(ns), .immediate()
@@ -64,6 +71,9 @@ final router = AudOscRouter()
 final adapter = AudOscAdapter(router: router);
 adapter.convert(AudOscMessage('/graph/1/node/2/param/gain', [0.5]));
 // [AudSetParamCommand(node: 20, paramIndex: 0, value: 0.5)]
+adapter.convert(AudOscMessage('/graph/1/node/2/msg/num_regions'));
+// [AudMessageCommand(node: 20, message: /num_regions)], for a node with
+// messages (osc-002)
 
 final preset = AudNodePreset.defaults(descriptor);  // JSON schema in doc/schemas
 preset.validate(descriptor);                        // [] when it fits

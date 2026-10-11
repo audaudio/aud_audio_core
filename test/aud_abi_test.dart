@@ -33,6 +33,8 @@ void main() {
         AUD_ERROR_CAPACITY: 'AUD_ERROR_CAPACITY',
         AUD_ERROR_RETIRED: 'AUD_ERROR_RETIRED',
         AUD_ERROR_OVERLOAD: 'AUD_ERROR_OVERLOAD',
+        AUD_ERROR_CANCELLED: 'AUD_ERROR_CANCELLED',
+        AUD_ERROR_UNDERFLOW: 'AUD_ERROR_UNDERFLOW',
         -99: 'AUD_RESULT_-99',
       };
       for (final entry in names.entries) {

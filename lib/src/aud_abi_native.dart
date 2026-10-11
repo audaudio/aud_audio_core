@@ -29,6 +29,8 @@ abstract final class AudAbiNative {
     'AudTransportRequest': sizeOf<bindings.AudTransportRequest>(),
     'AudTransportProviderVTable': sizeOf<bindings.AudTransportProviderVTable>(),
     'AudEvent': sizeOf<bindings.AudEvent>(),
+    'AudMessageArg': sizeOf<bindings.AudMessageArg>(),
+    'AudMessage': sizeOf<bindings.AudMessage>(),
     'AudBusDescriptor': sizeOf<bindings.AudBusDescriptor>(),
     'AudEventPortDescriptor': sizeOf<bindings.AudEventPortDescriptor>(),
     'AudParamDescriptor': sizeOf<bindings.AudParamDescriptor>(),
@@ -38,6 +40,8 @@ abstract final class AudAbiNative {
     'AudProcessContext': sizeOf<bindings.AudProcessContext>(),
     'AudNodeVTable': sizeOf<bindings.AudNodeVTable>(),
     'AudNodeDescriptor': sizeOf<bindings.AudNodeDescriptor>(),
+    'AudTask': sizeOf<bindings.AudTask>(),
+    'AudCacheVTable': sizeOf<bindings.AudCacheVTable>(),
     'AudHostApi': sizeOf<bindings.AudHostApi>(),
     'AudRenderRequest': sizeOf<bindings.AudRenderRequest>(),
   };

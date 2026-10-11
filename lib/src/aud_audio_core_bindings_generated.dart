@@ -348,7 +348,11 @@ external int aud_core_ump_word_count(int word0);
 
 const int AUD_ABI_VERSION_MAJOR = 0;
 
-const int AUD_ABI_VERSION_MINOR = 3;
+const int AUD_ABI_VERSION_MINOR = 4;
+
+const int AUD_ARG_BLOB = 98;
+
+const int AUD_ARG_DOUBLE = 100;
 
 const int AUD_ARG_FALSE = 70;
 
@@ -358,7 +362,11 @@ const int AUD_ARG_IMPULSE = 73;
 
 const int AUD_ARG_INT32 = 105;
 
+const int AUD_ARG_INT64 = 104;
+
 const int AUD_ARG_NIL = 78;
+
+const int AUD_ARG_STRING = 115;
 
 const int AUD_ARG_TRUE = 84;
 
@@ -381,6 +389,8 @@ const int AUD_ERROR_ABI_MAJOR = -2;
 const int AUD_ERROR_ABI_MINOR = -3;
 
 const int AUD_ERROR_BUFFER_TOO_SMALL = -11;
+
+const int AUD_ERROR_CANCELLED = -21;
 
 const int AUD_ERROR_CAPACITY = -18;
 
@@ -412,6 +422,8 @@ const int AUD_ERROR_STATE = -8;
 
 const int AUD_ERROR_STATE_VERSION = -12;
 
+const int AUD_ERROR_UNDERFLOW = -22;
+
 const int AUD_ERROR_UNKNOWN_TYPE = -5;
 
 const int AUD_ERROR_UNSUPPORTED = -10;
@@ -419,6 +431,8 @@ const int AUD_ERROR_UNSUPPORTED = -10;
 const int AUD_EVENT_CONTROL = 2;
 
 const int AUD_EVENT_FLAG_LIVE = 1;
+
+const int AUD_EVENT_MESSAGE = 4;
 
 const int AUD_EVENT_PARAM = 3;
 
@@ -443,6 +457,8 @@ const int AUD_NODE_CAP_EVENT_OUTPUT = 256;
 const int AUD_NODE_CAP_IN_PLACE = 1;
 
 const int AUD_NODE_CAP_LATENCY = 32;
+
+const int AUD_NODE_CAP_MESSAGES = 2048;
 
 const int AUD_NODE_CAP_RESET_ON_SEEK = 1024;
 
@@ -604,6 +620,40 @@ final class AudBusDescriptor extends ffi.Struct {
     ..ref.min_channels = min_channels
     ..ref.max_channels = max_channels
     ..ref.default_channels = default_channels;
+}
+
+/// A cache a package keeps, e.g. the decoded samples of the sampler, whose
+/// bytes count against the sample cache budget of the process
+/// (lifecycle-001). The engine trims the caches when the process holds more
+/// than the budget.
+final class AudCacheVTable extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  /// [control, offline] Frees entries nobody uses, the least recently used
+  /// first, until at least `bytes` are freed or none is left; returns the
+  /// bytes freed, which the engine counts off - the cache does not report
+  /// them through cache_changed. Runs on a worker thread of the engine, or
+  /// on the control thread that sets a smaller budget.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Uint64 Function(ffi.Pointer<ffi.Void> cache, ffi.Uint64 bytes)
+    >
+  >
+  trim;
+
+  static ffi.Pointer<AudCacheVTable> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Uint64 Function(ffi.Pointer<ffi.Void> cache, ffi.Uint64 bytes)
+      >
+    >
+    trim,
+  }) => $allocator<AudCacheVTable>()
+    ..ref.struct_size = struct_size
+    ..ref.trim = trim;
 }
 
 /// ............................................................................
@@ -784,6 +834,139 @@ final class AudHostApi extends ffi.Struct {
   >
   emit_event;
 
+  /// [control, offline, realtime] Queues a task for a worker thread of the
+  /// engine. Lock-free and without allocation, so the realtime thread may
+  /// post too; AUD_ERROR_QUEUE_FULL when the queue is full, AUD_ERROR_STATE
+  /// when the engine shuts down.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int32 Function(ffi.Pointer<ffi.Void> host, ffi.Pointer<AudTask> task)
+    >
+  >
+  post_task;
+
+  /// [control] Opens a load of `instance`, e.g. of the file a string setting
+  /// names; returns its id (> 0) or an error code. The engine reports the
+  /// load to the control thread until end_load; `name` is copied.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int32 Function(
+        ffi.Pointer<ffi.Void> host,
+        ffi.Pointer<ffi.Void> instance,
+        ffi.Pointer<ffi.Char> name,
+      )
+    >
+  >
+  begin_load;
+
+  /// [control, offline] Reports the progress of a load, 0 to 1.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<ffi.Void> host,
+        ffi.Int32 load,
+        ffi.Float progress,
+      )
+    >
+  >
+  load_progress;
+
+  /// [control, offline] Ends a load with AUD_OK, AUD_ERROR_CANCELLED or an
+  /// error code and a message (NULL for none): why it failed, or what a load
+  /// that ended well could not do. The id is spent afterwards.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<ffi.Void> host,
+        ffi.Int32 load,
+        ffi.Int32 result,
+        ffi.Pointer<ffi.Char> message,
+      )
+    >
+  >
+  end_load;
+
+  /// [control, offline] Whether the control thread cancelled the load.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int32 Function(ffi.Pointer<ffi.Void> host, ffi.Int32 load)
+    >
+  >
+  load_cancelled;
+
+  /// [control] Registers a cache that the engine trims when the process
+  /// holds more than its sample cache budget. A cache is registered once per
+  /// process; registering it again changes nothing.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Int32 Function(
+        ffi.Pointer<ffi.Void> host,
+        ffi.Pointer<AudCacheVTable> vtable,
+        ffi.Pointer<ffi.Void> cache,
+      )
+    >
+  >
+  register_cache;
+
+  /// [control] Unregisters a cache; its bytes stop counting.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(ffi.Pointer<ffi.Void> host, ffi.Pointer<ffi.Void> cache)
+    >
+  >
+  unregister_cache;
+
+  /// [control, offline, realtime] Reports a change of the bytes a registered
+  /// cache holds; lock-free.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<ffi.Void> host,
+        ffi.Pointer<ffi.Void> cache,
+        ffi.Int64 delta_bytes,
+      )
+    >
+  >
+  cache_changed;
+
+  /// [any thread] The sample cache budget of the process in bytes. A cache
+  /// refuses to pin more than fits it, e.g. an instrument whose samples
+  /// alone exceed it.
+  external ffi.Pointer<
+    ffi.NativeFunction<ffi.Uint64 Function(ffi.Pointer<ffi.Void> host)>
+  >
+  cache_budget;
+
+  /// [realtime] Reports a diagnostic of the instance for the block being
+  /// rendered: a result code, e.g. AUD_ERROR_UNDERFLOW, and how often it
+  /// happened. The engine sums them per node and code and reports them once
+  /// per block.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<ffi.Void> host,
+        ffi.Pointer<ffi.Void> instance,
+        ffi.Int32 code,
+        ffi.Uint32 count,
+      )
+    >
+  >
+  report;
+
+  /// [realtime] Sends a message of the instance to the control thread, e.g.
+  /// the reply to an AUD_EVENT_MESSAGE; the engine copies it. A message the
+  /// engine cannot hold is dropped and counted as AUD_ERROR_QUEUE_FULL.
+  external ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Void Function(
+        ffi.Pointer<ffi.Void> host,
+        ffi.Pointer<ffi.Void> instance,
+        ffi.Pointer<AudMessage> message,
+      )
+    >
+  >
+  emit_message;
+
   static ffi.Pointer<AudHostApi> $allocate(
     ffi.Allocator $allocator, {
     required int struct_size,
@@ -848,6 +1031,106 @@ final class AudHostApi extends ffi.Struct {
       >
     >
     emit_event,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int32 Function(
+          ffi.Pointer<ffi.Void> host,
+          ffi.Pointer<AudTask> task,
+        )
+      >
+    >
+    post_task,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int32 Function(
+          ffi.Pointer<ffi.Void> host,
+          ffi.Pointer<ffi.Void> instance,
+          ffi.Pointer<ffi.Char> name,
+        )
+      >
+    >
+    begin_load,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<ffi.Void> host,
+          ffi.Int32 load,
+          ffi.Float progress,
+        )
+      >
+    >
+    load_progress,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<ffi.Void> host,
+          ffi.Int32 load,
+          ffi.Int32 result,
+          ffi.Pointer<ffi.Char> message,
+        )
+      >
+    >
+    end_load,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int32 Function(ffi.Pointer<ffi.Void> host, ffi.Int32 load)
+      >
+    >
+    load_cancelled,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Int32 Function(
+          ffi.Pointer<ffi.Void> host,
+          ffi.Pointer<AudCacheVTable> vtable,
+          ffi.Pointer<ffi.Void> cache,
+        )
+      >
+    >
+    register_cache,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<ffi.Void> host,
+          ffi.Pointer<ffi.Void> cache,
+        )
+      >
+    >
+    unregister_cache,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<ffi.Void> host,
+          ffi.Pointer<ffi.Void> cache,
+          ffi.Int64 delta_bytes,
+        )
+      >
+    >
+    cache_changed,
+    required ffi.Pointer<
+      ffi.NativeFunction<ffi.Uint64 Function(ffi.Pointer<ffi.Void> host)>
+    >
+    cache_budget,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<ffi.Void> host,
+          ffi.Pointer<ffi.Void> instance,
+          ffi.Int32 code,
+          ffi.Uint32 count,
+        )
+      >
+    >
+    report,
+    required ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(
+          ffi.Pointer<ffi.Void> host,
+          ffi.Pointer<ffi.Void> instance,
+          ffi.Pointer<AudMessage> message,
+        )
+      >
+    >
+    emit_message,
   }) => $allocator<AudHostApi>()
     ..ref.struct_size = struct_size
     ..ref.abi_major = abi_major
@@ -859,7 +1142,91 @@ final class AudHostApi extends ffi.Struct {
     ..ref.alloc = alloc
     ..ref.free = free
     ..ref.log = log
-    ..ref.emit_event = emit_event;
+    ..ref.emit_event = emit_event
+    ..ref.post_task = post_task
+    ..ref.begin_load = begin_load
+    ..ref.load_progress = load_progress
+    ..ref.end_load = end_load
+    ..ref.load_cancelled = load_cancelled
+    ..ref.register_cache = register_cache
+    ..ref.unregister_cache = unregister_cache
+    ..ref.cache_changed = cache_changed
+    ..ref.cache_budget = cache_budget
+    ..ref.report = report
+    ..ref.emit_message = emit_message;
+}
+
+/// An OSC message to or from a node (osc-001): the path below the node's
+/// route, e.g. "/region0/ampeg_attack" for the route
+/// /graph/1/node/2/msg/region0/ampeg_attack, and its arguments. The side
+/// that hands a message over owns it; the receiver copies what it keeps.
+final class AudMessage extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  @ffi.Uint32()
+  external int num_args;
+
+  external ffi.Pointer<ffi.Char> path;
+
+  external ffi.Pointer<AudMessageArg> args;
+
+  static ffi.Pointer<AudMessage> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required int num_args,
+    required ffi.Pointer<ffi.Char> path,
+    required ffi.Pointer<AudMessageArg> args,
+  }) => $allocator<AudMessage>()
+    ..ref.struct_size = struct_size
+    ..ref.num_args = num_args
+    ..ref.path = path
+    ..ref.args = args;
+}
+
+/// One argument of a message: its OSC type tag (AUD_ARG_*) and its value;
+/// true, false, nil and impulse carry no value.
+final class AudMessageArg extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  /// AUD_ARG_*
+  @ffi.Uint32()
+  external int type;
+
+  /// bytes of a blob
+  @ffi.Uint32()
+  external int size;
+
+  @ffi.Uint32()
+  external int reserved;
+
+  external AudMessageValue value;
+}
+
+/// The value of a message argument, by its type tag.
+final class AudMessageValue extends ffi.Union {
+  /// AUD_ARG_INT32
+  @ffi.Int32()
+  external int i;
+
+  /// AUD_ARG_INT64
+  @ffi.Int64()
+  external int h;
+
+  /// AUD_ARG_FLOAT
+  @ffi.Float()
+  external double f;
+
+  /// AUD_ARG_DOUBLE
+  @ffi.Double()
+  external double d;
+
+  /// AUD_ARG_STRING, NUL-terminated
+  external ffi.Pointer<ffi.Char> s;
+
+  /// AUD_ARG_BLOB, `size` bytes
+  external ffi.Pointer<ffi.Void> b;
 }
 
 /// A node type a package registers.
@@ -1044,7 +1411,10 @@ final class AudNodeVTable extends ffi.Struct {
   process;
 
   /// [control] Applies a string setting; NULL unless AUD_NODE_CAP_STRINGS is
-  /// set. May block.
+  /// set. Returns AUD_OK, an error code, or the id (> 0) of a load it
+  /// started with AudHostApi.begin_load: a node that loads on a worker
+  /// returns at once and the load reports its progress and its end. May
+  /// block otherwise.
   external ffi.Pointer<
     ffi.NativeFunction<
       ffi.Int32 Function(
@@ -1063,7 +1433,8 @@ final class AudNodeVTable extends ffi.Struct {
   get_latency;
 
   /// [control] The tail in frames after the input stops, or
-  /// AUD_TAIL_INFINITE; NULL means 0.
+  /// AUD_TAIL_INFINITE; NULL means 0. Read after prepare and at every
+  /// commit, so a tail may follow what the node loaded.
   external ffi.Pointer<
     ffi.NativeFunction<ffi.Uint32 Function(ffi.Pointer<ffi.Void> instance)>
   >
@@ -1558,6 +1929,39 @@ final class AudStringKeyDescriptor extends ffi.Struct {
     ..ref.key = key
     ..ref.id = id
     ..ref.name = name;
+}
+
+/// A task for a worker thread of the engine (lifecycle-001): `run` is
+/// called once with `user` on a worker thread, never on the realtime thread,
+/// and may block. The engine copies the struct when it is posted.
+final class AudTask extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  @ffi.Uint32()
+  external int reserved;
+
+  external ffi.Pointer<
+    ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void> user)>
+  >
+  run;
+
+  external ffi.Pointer<ffi.Void> user;
+
+  static ffi.Pointer<AudTask> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required int reserved,
+    required ffi.Pointer<
+      ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void> user)>
+    >
+    run,
+    required ffi.Pointer<ffi.Void> user,
+  }) => $allocator<AudTask>()
+    ..ref.struct_size = struct_size
+    ..ref.reserved = reserved
+    ..ref.run = run
+    ..ref.user = user;
 }
 
 /// A point in time in one of the domains. `value` is a sample position, a

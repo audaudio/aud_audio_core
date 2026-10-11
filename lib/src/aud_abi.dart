@@ -26,6 +26,8 @@ abstract final class AudAbi {
     'AudTransportRequest',
     'AudTransportProviderVTable',
     'AudEvent',
+    'AudMessageArg',
+    'AudMessage',
     'AudBusDescriptor',
     'AudEventPortDescriptor',
     'AudParamDescriptor',
@@ -35,6 +37,8 @@ abstract final class AudAbi {
     'AudProcessContext',
     'AudNodeVTable',
     'AudNodeDescriptor',
+    'AudTask',
+    'AudCacheVTable',
     'AudHostApi',
     'AudRenderRequest',
   ];
@@ -64,6 +68,8 @@ abstract final class AudAbi {
     bindings.AUD_ERROR_CAPACITY => 'AUD_ERROR_CAPACITY',
     bindings.AUD_ERROR_RETIRED => 'AUD_ERROR_RETIRED',
     bindings.AUD_ERROR_OVERLOAD => 'AUD_ERROR_OVERLOAD',
+    bindings.AUD_ERROR_CANCELLED => 'AUD_ERROR_CANCELLED',
+    bindings.AUD_ERROR_UNDERFLOW => 'AUD_ERROR_UNDERFLOW',
     _ => 'AUD_RESULT_$code',
   };
 

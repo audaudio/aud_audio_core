@@ -54,6 +54,18 @@ class AudOscAddress {
     required String outlet,
   }) => AudOscAddress('/graph/$graphId/node/$nodeId/outlet/$outlet');
 
+  /// The route of the messages of a node (osc-001): a message to an address
+  /// below it reaches the node with the rest of the address as its path.
+  factory AudOscAddress.message({
+    required Object graphId,
+    required Object nodeId,
+  }) => AudOscAddress(
+    '/graph/$graphId/node/$nodeId/${AudOscAddress.messageSegment}',
+  );
+
+  /// The segment that starts the message route of a node.
+  static const String messageSegment = 'msg';
+
   /// The address of a string setting.
   factory AudOscAddress.string({
     required Object graphId,

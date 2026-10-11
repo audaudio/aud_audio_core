@@ -31,6 +31,13 @@ void main() {
           graph: 1,
           request: AudTransportRequest.start(),
         ),
+        AudMessageCommand(
+          node: 1,
+          message: AudOscMessage('/region0/volume', [-6.0, 'x', 3]),
+          at: const AudTimestamp.host(5),
+          id: 4,
+        ),
+        AudMessageCommand(node: 2, message: AudOscMessage('/num_regions')),
       ];
       for (final command in commands) {
         final copy = AudCommand.fromJson(command.toJson());

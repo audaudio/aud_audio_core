@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Add ABI 0.4 with tasks, loads, caches and messages
+
+- AudHostApi minor 4: post_task, begin_load, load_progress, end_load, load_cancelled, register_cache, unregister_cache, cache_changed, cache_budget, report and emit_message
+- AUD_EVENT_MESSAGE with AudMessage and AudMessageArg, AUD_NODE_CAP_MESSAGES, AUD_ERROR_CANCELLED and AUD_ERROR_UNDERFLOW, the OSC tags h, d, s and b
+- AudTask and AudCacheVTable for the worker threads and the sample cache of lifecycle-001
+- The engine reads get_tail after prepare and at every commit; end_load takes a message for a load that ended well
+- AudMessageCommand, the message route /graph/<g>/node/<n>/msg and AudOscRouter.resolveMessage
+- AudNodeCapabilities.messages and the new struct sizes and result names
+
 ## 0.4.0 - 2026-10-09
 
 ### Changed

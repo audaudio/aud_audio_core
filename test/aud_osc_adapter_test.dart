@@ -19,6 +19,10 @@ void main() {
     eventOutputs: [AudEventPortDescriptor(id: 'out')],
     stringKeys: [AudStringKeyDescriptor(key: 4, id: 'file')],
   );
+  const sampler = AudNodeDescriptor(
+    typeId: 'aud.sampler.sfz',
+    capabilities: AudNodeCapabilities(messages: true),
+  );
   late AudOscRouter router;
   late AudOscAdapter adapter;
   setUp(() {
@@ -305,6 +309,71 @@ void main() {
           reason: '${entry.key}',
         );
       }
+    });
+  });
+
+  group('messages (osc-001)', () {
+    setUp(() {
+      router.registerNode(graph: 1, node: 4, handle: 40, descriptor: sampler);
+      router.registerNode(graph: 1, node: 5, handle: 50, descriptor: sampler);
+    });
+
+    test('a node that takes messages gets a message route', () {
+      expect(
+        router.lookup('/graph/1/node/4/msg'),
+        isA<AudMessageTarget>().having((t) => t.handle, 'handle', 40),
+      );
+      expect(router.lookup('/graph/1/node/2/msg'), isNull);
+    });
+
+    test('resolveMessage(address) finds the route and the path below it', () {
+      final (targets, path) = router.resolveMessage(
+        '/graph/1/node/4/msg/region0/ampeg_attack',
+      );
+      expect(targets.map((t) => t.handle), [40]);
+      expect(path, '/region0/ampeg_attack');
+
+      final (both, all) = router.resolveMessage('/graph/1/node/*/msg/hello');
+      expect(both.map((t) => t.handle), [40, 50]);
+      expect(all, '/hello');
+
+      expect(router.resolveMessage('/graph/1/node/2/msg/hello').$1, isEmpty);
+      expect(router.resolveMessage('/graph/1/node/4/msg').$1, isEmpty);
+      expect(router.resolveMessage('/graph/1/node/2/param/gain').$1, isEmpty);
+    });
+
+    test('the adapter turns messages below a route into message commands', () {
+      expect(
+        adapter.convert(
+          AudOscMessage('/graph/1/node/4/msg/region0/volume', [-6.0]),
+        ),
+        [
+          AudMessageCommand(
+            node: 40,
+            message: AudOscMessage('/region0/volume', [-6.0]),
+          ),
+        ],
+      );
+      final scheduled = adapter.convert(
+        AudOscMessage('/graph/1/node/{4,5}/msg/num_regions'),
+        timetag: AudOscTimetag.fromUnixNanoseconds(2000),
+      );
+      expect(scheduled, hasLength(2));
+      expect(scheduled.cast<AudMessageCommand>().map((c) => (c.node, c.id)), [
+        (40, 1),
+        (50, 2),
+      ]);
+      expect((scheduled[0] as AudMessageCommand).at.isImmediate, isFalse);
+      expect(
+        () => adapter.convert(AudOscMessage('/graph/1/node/4/msg')),
+        throwsA(
+          isA<AudOscException>().having(
+            (e) => e.code,
+            'code',
+            AUD_ERROR_NOT_FOUND,
+          ),
+        ),
+      );
     });
   });
 }

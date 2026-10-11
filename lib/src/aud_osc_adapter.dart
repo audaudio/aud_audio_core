@@ -142,6 +142,17 @@ final class AudStringTarget extends AudOscTarget {
   final int key;
 }
 
+/// The message route of a node that takes messages (osc-001): a message
+/// to an address below it reaches the node with the rest of the address as
+/// its path.
+final class AudMessageTarget extends AudOscTarget {
+  /// Creates the target.
+  const AudMessageTarget(super.address, {required this.handle});
+
+  /// The engine handle of the node.
+  final int handle;
+}
+
 // #############################################################################
 /// Resolves OSC addresses and patterns to engine targets. Runs on the
 /// Dart side, never on the audio thread (decision osc-001).
@@ -232,6 +243,10 @@ class AudOscRouter {
       final a = AudOscAddress.string(graphId: graph, nodeId: node, key: key.id);
       _targets[a.value] = AudStringTarget(a, handle: handle, key: key.key);
     }
+    if (descriptor.capabilities.messages) {
+      final a = AudOscAddress.message(graphId: graph, nodeId: node);
+      _targets[a.value] = AudMessageTarget(a, handle: handle);
+    }
   }
 
   /// Removes a node with everything below it.
@@ -244,6 +259,23 @@ class AudOscRouter {
   // ...........................................................................
   /// The target at exactly [address], or null.
   AudOscTarget? lookup(String address) => _targets[address];
+
+  /// The message routes an address below them reaches, with the path below
+  /// the route: for `/graph/1/node/2/msg/region0/volume` the route of node
+  /// 2 and `/region0/volume`. The part up to the route may be a pattern;
+  /// the path is passed on as it is.
+  (List<AudMessageTarget>, String) resolveMessage(String addressOrPattern) {
+    final segments = addressOrPattern.substring(1).split('/');
+    for (var i = segments.length - 2; i >= 0; i--) {
+      if (segments[i] != AudOscAddress.messageSegment) continue;
+      final route = '/${segments.sublist(0, i + 1).join('/')}';
+      final targets = resolve(route).whereType<AudMessageTarget>().toList();
+      if (targets.isNotEmpty) {
+        return (targets, '/${segments.sublist(i + 1).join('/')}');
+      }
+    }
+    return (const [], '');
+  }
 
   /// The targets an address or pattern names, in registration order.
   List<AudOscTarget> resolve(String addressOrPattern) {
@@ -299,6 +331,8 @@ class AudOscException implements Exception {
 /// - `<string> s value` applies a string setting
 /// - `<transport>/start`, `/stop`, `/seek f beat`, `/tempo f bpm`,
 ///   `/loop f start f end`, `/quantum f beats`, `/timesig i num i den`
+/// - `<node>/msg/<path> <arguments>` sends the message `<path>` to a node
+///   that takes messages, e.g. sfizz's `/region0/volume f -6`
 ///
 /// A message with a pattern reaches every matching target. A message in a
 /// bundle with a timetag is scheduled at that time and gets an id.
@@ -357,6 +391,19 @@ class AudOscAdapter {
     AudOscTimetag timetag = AudOscTimetag.immediate,
   }) {
     final at = timestampOf(timetag);
+    final (messageTargets, path) = router.resolveMessage(message.address);
+    if (messageTargets.isNotEmpty) {
+      final relative = AudOscMessage(path, message.arguments);
+      return [
+        for (final target in messageTargets)
+          AudMessageCommand(
+            node: target.handle,
+            message: relative,
+            at: at,
+            id: at.isImmediate ? 0 : _nextId++,
+          ),
+      ];
+    }
     var targets = router.resolve(message.address);
     String? verb;
     if (targets.isEmpty) {
