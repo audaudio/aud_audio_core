@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.1 - 2026-10-12
 
 ### Added
 
@@ -48,7 +48,6 @@
 - load_cancelled reads as cancelled once the engine removes the instance
 
 - A task may call the AudHostApi it was posted through until it returns
-
 
 ## 0.4.0 - 2026-10-09
 
