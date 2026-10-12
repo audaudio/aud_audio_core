@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Add aud_midi_standard from pub.dev
+
+- aud_midi_standard ^0.1.0 hosted, as the aud_midi family resolves it, so that apps can combine both families (ticket 26)
+
 ## 0.5.0 - 2026-10-12
 
 ### Added
@@ -41,6 +49,7 @@
 - load_cancelled reads as cancelled once the engine removes the instance
 
 - A task may call the AudHostApi it was posted through until it returns
+
 
 ## 0.4.0 - 2026-10-09
 
