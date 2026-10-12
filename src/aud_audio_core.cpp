@@ -38,6 +38,8 @@ AUD_EXPORT int32_t aud_abi_sizeof(const char* struct_name) {
       {"AudTransportRequest", sizeof(AudTransportRequest)},
       {"AudTransportProviderVTable", sizeof(AudTransportProviderVTable)},
       {"AudEvent", sizeof(AudEvent)},
+      {"AudMessageArg", sizeof(AudMessageArg)},
+      {"AudMessage", sizeof(AudMessage)},
       {"AudBusDescriptor", sizeof(AudBusDescriptor)},
       {"AudEventPortDescriptor", sizeof(AudEventPortDescriptor)},
       {"AudParamDescriptor", sizeof(AudParamDescriptor)},
@@ -47,6 +49,8 @@ AUD_EXPORT int32_t aud_abi_sizeof(const char* struct_name) {
       {"AudProcessContext", sizeof(AudProcessContext)},
       {"AudNodeVTable", sizeof(AudNodeVTable)},
       {"AudNodeDescriptor", sizeof(AudNodeDescriptor)},
+      {"AudTask", sizeof(AudTask)},
+      {"AudCacheVTable", sizeof(AudCacheVTable)},
       {"AudHostApi", sizeof(AudHostApi)},
       {"AudRenderRequest", sizeof(AudRenderRequest)},
   };

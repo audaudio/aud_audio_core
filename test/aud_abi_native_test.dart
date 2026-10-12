@@ -13,13 +13,13 @@ void main() {
       expect(AudAbiNative.nativeMajor, AudAbi.major);
       expect(AudAbiNative.nativeMinor, AudAbi.minor);
       expect(AudAbi.major, 0);
-      expect(AudAbi.minor, 3);
+      expect(AudAbi.minor, 4);
     });
 
     test('struct sizes agree between Dart and C', () {
       expect(AudAbiNative.dartStructSizes, AudAbiNative.nativeStructSizes);
       expect(AudAbiNative.dartStructSizes.keys, AudAbi.structNames);
-      expect(AudAbi.structNames, hasLength(18));
+      expect(AudAbi.structNames, hasLength(22));
     });
 
     test('nativeSizeOf(name) is -1 for an unknown struct', () {
@@ -29,8 +29,8 @@ void main() {
 
     test('nativeIsCompatible(...) follows the rule of AudAbi', () {
       for (final (pm, pn, em, en) in [
-        (0, 3, 0, 3),
-        (0, 2, 0, 3),
+        (0, 4, 0, 4),
+        (0, 3, 0, 4),
         (1, 0, 2, 0),
       ]) {
         expect(

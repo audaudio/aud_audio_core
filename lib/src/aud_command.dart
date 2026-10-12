@@ -50,6 +50,14 @@ sealed class AudCommand {
           json['request']! as Map<String, Object?>,
         ),
       ),
+      'message' => AudMessageCommand(
+        node: (json['node']! as num).toInt(),
+        message: AudOscMessage.fromJson(
+          json['message']! as Map<String, Object?>,
+        ),
+        at: at,
+        id: (json['id'] as num?)?.toInt() ?? 0,
+      ),
       _ => throw FormatException('Unknown command', json),
     };
   }
@@ -249,6 +257,55 @@ final class AudTransportCommand extends AudCommand {
 
   @override
   int get hashCode => Object.hash(graph, request);
+}
+
+// #############################################################################
+/// Sends an OSC message to a node that takes messages (osc-002): the path
+/// below the node's route, e.g. `/region0/ampeg_attack` for
+/// `/graph/1/node/2/msg/region0/ampeg_attack`, with its arguments. The
+/// engine delivers it on the audio thread at its time, ordered with the
+/// node's events; an [id] above zero lets it be cancelled while it waits.
+/// The node answers through the messages of its graph.
+final class AudMessageCommand extends AudCommand {
+  /// Creates the command.
+  const AudMessageCommand({
+    required this.node,
+    required this.message,
+    this.at = const AudTimestamp.immediate(),
+    this.id = 0,
+  });
+
+  /// The node handle.
+  final int node;
+
+  /// The message; its address is the path below the node's route.
+  final AudOscMessage message;
+
+  /// When the message is delivered.
+  final AudTimestamp at;
+
+  /// The id of a scheduled message, 0 for none.
+  final int id;
+
+  @override
+  Map<String, Object?> toJson() => {
+    'command': 'message',
+    'node': node,
+    'message': message.toJson(),
+    'at': at.toJson(),
+    'id': id,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is AudMessageCommand &&
+      other.node == node &&
+      other.message == message &&
+      other.at == at &&
+      other.id == id;
+
+  @override
+  int get hashCode => Object.hash(node, message, at, id);
 }
 
 // #############################################################################

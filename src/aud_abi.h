@@ -21,7 +21,10 @@
 // - Every function is tagged with the thread that calls it: [control] the
 //   control thread, [realtime] the audio thread (no allocation, no lock,
 //   no I/O, no exception), [offline] any thread while no realtime call of
-//   the instance is in flight (may block).
+//   the instance is in flight (may block), [worker] a worker thread of the
+//   engine that runs a task or a trim, concurrently with the realtime
+//   calls (may block), [any thread] each of these, the audio thread
+//   included.
 // - Memory crossing the ABI is owned by the engine: packages allocate
 //   through the host's allocator for non-realtime work and never in a
 //   realtime call.
@@ -49,9 +52,11 @@ extern "C" {
 #define AUD_EXPORT __attribute__((visibility("default")))
 #endif
 
-// The ABI version.
+// The ABI version. Minor 4 (ticket 25) adds the worker tasks, the loads,
+// the caches and the diagnostics of a node (lifecycle-002) and the messages
+// of a node (osc-002) to AudHostApi.
 #define AUD_ABI_VERSION_MAJOR 0
-#define AUD_ABI_VERSION_MINOR 3
+#define AUD_ABI_VERSION_MINOR 4
 
 // Result codes of ABI calls and engine functions.
 enum {
@@ -90,6 +95,11 @@ enum {
   AUD_ERROR_RETIRED = -19,
   // The render of a block took longer than the block lasts; a diagnostic.
   AUD_ERROR_OVERLOAD = -20,
+  // A load was cancelled before it finished.
+  AUD_ERROR_CANCELLED = -21,
+  // A stream could not deliver in time: the node played silence instead of
+  // waiting (lifecycle-001); a diagnostic.
+  AUD_ERROR_UNDERFLOW = -22,
 };
 
 // Capabilities a node type declares.
@@ -117,6 +127,9 @@ enum {
   AUD_NODE_CAP_RESET_ON_STOP = 1 << 9,
   // The engine resets the node when the transport seeks.
   AUD_NODE_CAP_RESET_ON_SEEK = 1 << 10,
+  // The node takes OSC messages as AUD_EVENT_MESSAGE events and answers
+  // through AudHostApi.emit_message (osc-002).
+  AUD_NODE_CAP_MESSAGES = 1 << 11,
 };
 
 // Thread affinity tags. Every function is documented with the thread that
@@ -309,6 +322,12 @@ enum {
   // A parameter change: words[0] the parameter index, words[1] the target
   // value as float bits, words[2] the ramp length in frames.
   AUD_EVENT_PARAM = 3,
+  // An OSC message for a node with AUD_NODE_CAP_MESSAGES (osc-002):
+  // words[0] and words[1] hold the low and the high 32 bits of a
+  // `const AudMessage*` the engine owns and keeps valid until the process
+  // call returns; aud_event_message() reads it. Only the engine creates
+  // these events; emit_event refuses them.
+  AUD_EVENT_MESSAGE = 4,
 };
 
 // Flags of an event.
@@ -317,7 +336,8 @@ enum {
   AUD_EVENT_FLAG_LIVE = 1 << 0,
 };
 
-// Argument type tags of a control event, the OSC 1.1 type tags.
+// Argument type tags of a control event and of a message, the OSC 1.1 type
+// tags; a control event carries the first six only.
 enum {
   AUD_ARG_INT32 = 'i',
   AUD_ARG_FLOAT = 'f',
@@ -325,10 +345,14 @@ enum {
   AUD_ARG_FALSE = 'F',
   AUD_ARG_NIL = 'N',
   AUD_ARG_IMPULSE = 'I',
+  AUD_ARG_INT64 = 'h',
+  AUD_ARG_DOUBLE = 'd',
+  AUD_ARG_STRING = 's',
+  AUD_ARG_BLOB = 'b',
 };
 
-// An event inside a block: a UMP, a control or a parameter event at a
-// sample offset on an event port of the node.
+// An event inside a block: a UMP, a control, a parameter or a message event
+// at a sample offset on an event port of the node.
 typedef struct AudEvent {
   uint32_t struct_size;
   uint32_t type;           // AUD_EVENT_*
@@ -337,6 +361,40 @@ typedef struct AudEvent {
   uint32_t flags;          // AUD_EVENT_FLAG_*
   uint32_t words[4];       // the payload, see the event types
 } AudEvent;
+
+// The value of a message argument, by its type tag.
+typedef union AudMessageValue {
+  int32_t i;      // AUD_ARG_INT32
+  int64_t h;      // AUD_ARG_INT64
+  float f;        // AUD_ARG_FLOAT
+  double d;       // AUD_ARG_DOUBLE
+  const char* s;  // AUD_ARG_STRING, NUL-terminated
+  const void* b;  // AUD_ARG_BLOB, `size` bytes
+} AudMessageValue;
+
+// One argument of a message: its OSC type tag (AUD_ARG_*) and its value;
+// true, false, nil and impulse carry no value.
+typedef struct AudMessageArg {
+  uint32_t struct_size;
+  uint32_t type;  // AUD_ARG_*
+  uint32_t size;  // bytes of a blob
+  uint32_t reserved;
+  AudMessageValue value;
+} AudMessageArg;
+
+// An OSC message to or from a node (osc-002): the path below the node's
+// route, e.g. "/region0/ampeg_attack" for the route
+// /graph/1/node/2/msg/region0/ampeg_attack, and its arguments. A message
+// holds at most 16 arguments and 1000 bytes of path, type tags and values,
+// the terminators of the texts and the sizes of the blobs included. The
+// side that hands a message over owns it; the receiver copies what it
+// keeps.
+typedef struct AudMessage {
+  uint32_t struct_size;
+  uint32_t num_args;
+  const char* path;
+  const AudMessageArg* args;
+} AudMessage;
 
 // ............................................................................
 // Descriptors
@@ -481,12 +539,16 @@ typedef struct AudNodeVTable {
   // [realtime] Renders one block; no allocation, no lock, no I/O.
   void (*process)(void* instance, const AudProcessContext* context);
   // [control] Applies a string setting; NULL unless AUD_NODE_CAP_STRINGS is
-  // set. May block.
+  // set. Returns AUD_OK, an error code, or the id (> 0) of a load it
+  // started with AudHostApi.begin_load: a node that loads on a worker
+  // returns at once and the load reports its progress and its end. May
+  // block otherwise.
   int32_t (*set_string)(void* instance, uint32_t key, const char* value);
   // [control] The latency in frames after prepare; NULL means 0.
   uint32_t (*get_latency)(void* instance);
   // [control] The tail in frames after the input stops, or
-  // AUD_TAIL_INFINITE; NULL means 0.
+  // AUD_TAIL_INFINITE; NULL means 0. Read after prepare and at every
+  // commit, so a tail may follow what the node loaded.
   uint32_t (*get_tail)(void* instance);
   // [offline] Writes the state into `buffer` and its size into `size`;
   // AUD_ERROR_BUFFER_TOO_SMALL with the needed size when `capacity` is
@@ -526,6 +588,37 @@ struct AudNodeDescriptor {
   const AudNodeVTable* vtable;
 };
 
+// A task for a worker thread of the engine (lifecycle-002). The engine
+// copies the struct when it is posted; `user` stays the poster's, who
+// keeps it valid until `run` returns. The engine runs every task it
+// accepted exactly once, also when it stops its workers: they finish the
+// queue first. It does not wait for the tasks of an instance it destroys,
+// so a task may run after the instance that posted it is gone; the
+// AudHostApi it was posted through stays valid until the task returns.
+typedef struct AudTask {
+  uint32_t struct_size;
+  uint32_t reserved;
+  // [worker] Runs the task with `user`; may block.
+  void (*run)(void* user);
+  void* user;
+} AudTask;
+
+// A cache a package keeps, e.g. the decoded samples of the sampler, whose
+// bytes count against the sample cache budget of the process
+// (lifecycle-002). The engine trims the caches when the process holds more
+// than the budget.
+typedef struct AudCacheVTable {
+  uint32_t struct_size;
+  // [control, worker] Frees entries nobody uses, the least recently used
+  // first, until at least `bytes` are freed or none is left; returns the
+  // bytes freed, which the engine counts off - the cache does not report
+  // them through cache_changed. Runs while the nodes render, one trim at a
+  // time, on a worker thread of the engine or on the control thread that
+  // sets a smaller budget. A trim calls neither register_cache nor
+  // unregister_cache: both wait for it.
+  uint64_t (*trim)(void* cache, uint64_t bytes);
+} AudCacheVTable;
+
 // What the engine offers a package. Memory crossing the ABI is owned by the
 // engine's allocator.
 struct AudHostApi {
@@ -541,15 +634,82 @@ struct AudHostApi {
   // "aud.link"; AUD_OK or an error code.
   int32_t (*register_transport_provider)(
       void* host, const char* id, const AudTransportProviderVTable* vtable);
-  // [control, offline] Allocates memory for non-realtime work.
+  // [control, offline, worker] Allocates memory for non-realtime work.
   void* (*alloc)(void* host, size_t bytes);
-  // [control, offline] Frees memory from alloc.
+  // [control, offline, worker] Frees memory from alloc.
   void (*free)(void* host, void* memory);
-  // [control, offline] Logs a message; never called on the realtime thread.
+  // [control, offline, worker] Logs a message; never called on the realtime
+  // thread.
   void (*log)(void* host, int32_t level, const char* message);
   // [realtime] Emits an event on an event output of the instance; only for
   // nodes with AUD_NODE_CAP_EVENT_OUTPUT. `event->port` names the output.
   void (*emit_event)(void* host, void* instance, const AudEvent* event);
+
+  // Minor 4: the resources of the process and the messages of a node.
+
+  // [any thread] Queues a task for a worker thread of the engine (see
+  // AudTask). Lock-free and without allocation, so the realtime thread may
+  // post too. Returns AUD_OK, AUD_ERROR_INVALID_ARGUMENT for a NULL task, a
+  // NULL `run` or a short struct, AUD_ERROR_QUEUE_FULL when the queue is
+  // full, or AUD_ERROR_STATE while the engine runs no worker, e.g. after it
+  // shut down.
+  int32_t (*post_task)(void* host, const AudTask* task);
+  // [control] Opens a load of `instance`, e.g. of the file a string setting
+  // names; returns its id (> 0) or an error code. The engine reports the
+  // load to the control thread until it ends; `name` is copied. The package
+  // ends every load it opens exactly once through end_load, also one it
+  // stops early; until then the load runs for the engine, and whoever waits
+  // for the loads waits for it.
+  int32_t (*begin_load)(void* host, void* instance, const char* name);
+  // [control, worker] Reports the progress of a load, 0 to 1.
+  void (*load_progress)(void* host, int32_t load, float progress);
+  // [control, worker] Ends a load with AUD_OK, AUD_ERROR_CANCELLED or an
+  // error code and a message (NULL for none): why it failed, or what a load
+  // that ended well could not do; `message` is copied. The id is spent
+  // afterwards: a later end_load changes nothing. After the engine
+  // destroyed an instance, it ends the loads of the instance that are still
+  // open with AUD_ERROR_CANCELLED.
+  void (*end_load)(void* host, int32_t load, int32_t result,
+                   const char* message);
+  // [control, worker] Whether the load is cancelled: the control thread
+  // cancelled it, or the engine removes its instance. The package then ends
+  // it with AUD_ERROR_CANCELLED as soon as it can. 0 for an id the engine
+  // no longer keeps.
+  int32_t (*load_cancelled)(void* host, int32_t load);
+  // [control] Registers a cache that the engine trims when the process
+  // holds more than its sample cache budget. Returns AUD_OK, also for a
+  // cache registered already, which keeps its first vtable,
+  // AUD_ERROR_INVALID_ARGUMENT for a NULL cache, a NULL `trim` or a short
+  // vtable, or AUD_ERROR_CAPACITY when the engine takes no more caches. A
+  // cache is registered once per process. The engine keeps `vtable` and
+  // `cache` until unregister_cache and counts the bytes cache_changed
+  // reports from now on.
+  int32_t (*register_cache)(void* host, const AudCacheVTable* vtable,
+                            void* cache);
+  // [control] Unregisters a cache; its bytes stop counting. Waits for a
+  // trim that runs; no trim follows. No thread reports a change of the
+  // cache while or after it is unregistered.
+  void (*unregister_cache)(void* host, void* cache);
+  // [any thread] Reports a change of the bytes a registered cache holds;
+  // lock-free. The engine ignores the changes of a cache it does not hold.
+  void (*cache_changed)(void* host, void* cache, int64_t delta_bytes);
+  // [any thread] The sample cache budget of the process in bytes. A cache
+  // refuses to pin more than fits it, e.g. an instrument whose samples
+  // alone exceed it.
+  uint64_t (*cache_budget)(void* host);
+  // [realtime] Reports a diagnostic of the instance for the block being
+  // rendered: a result code, e.g. AUD_ERROR_UNDERFLOW, and how often it
+  // happened. Works only inside the process call of the instance; the
+  // engine ignores other calls. It sums the reports per node and code and
+  // reports them once per block.
+  void (*report)(void* host, void* instance, int32_t code, uint32_t count);
+  // [realtime] Sends a message of the instance to the control thread, e.g.
+  // the reply to an AUD_EVENT_MESSAGE. Works only inside the process call
+  // of the instance; the engine ignores other calls. The engine copies the
+  // message before it returns. A message it cannot take - more bytes than
+  // an AudMessage holds, an unknown type tag, a full queue - is dropped and
+  // counted as AUD_ERROR_QUEUE_FULL.
+  void (*emit_message)(void* host, void* instance, const AudMessage* message);
 };
 
 // The signature of the registration entry point every DSP package exports
@@ -629,6 +789,25 @@ static inline AudEvent aud_event_ump(const uint32_t* words, uint32_t num_words,
   uint32_t i;
   for (i = 0; i < num_words && i < 4; ++i) event.words[i] = words[i];
   return event;
+}
+
+// Builds an AUD_EVENT_MESSAGE event that points at `message`; the engine
+// keeps the message valid until the process call that receives it returns.
+static inline AudEvent aud_event_message_make(const AudMessage* message,
+                                              uint32_t sample_offset,
+                                              uint32_t port) {
+  const uint64_t bits = (uint64_t)(uintptr_t)message;
+  AudEvent event = {sizeof(AudEvent), AUD_EVENT_MESSAGE, sample_offset, port,
+                    0, {(uint32_t)bits, (uint32_t)(bits >> 32), 0, 0}};
+  return event;
+}
+
+// The message of an AUD_EVENT_MESSAGE event, NULL for another type.
+static inline const AudMessage* aud_event_message(const AudEvent* event) {
+  if (event == NULL || event->type != AUD_EVENT_MESSAGE) return NULL;
+  const uint64_t bits =
+      (uint64_t)event->words[0] | ((uint64_t)event->words[1] << 32);
+  return (const AudMessage*)(uintptr_t)bits;
 }
 
 // Whether a package built against `package_major.package_minor` runs on an

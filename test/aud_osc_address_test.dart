@@ -32,6 +32,11 @@ void main() {
         AudOscAddress.string(graphId: 1, nodeId: 2, key: 'file').value,
         '/graph/1/node/2/string/file',
       );
+      expect(
+        AudOscAddress.message(graphId: 1, nodeId: 2).value,
+        '/graph/1/node/2/msg',
+      );
+      expect(AudOscAddress.messageSegment, 'msg');
     });
 
     test('validates the grammar', () {
