@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 - 2026-10-12
 
 ### Added
 
@@ -35,8 +35,11 @@
 - Add the message limits of osc-002 to AudMessage
 
 - AudMessage holds at most 16 arguments and 1000 bytes of path, type tags and values (osc-002)
+
 - emit_message drops a message with more bytes, an unknown type tag or a full queue
+
 - load_cancelled reads as cancelled once the engine removes the instance
+
 - A task may call the AudHostApi it was posted through until it returns
 
 ## 0.4.0 - 2026-10-09
