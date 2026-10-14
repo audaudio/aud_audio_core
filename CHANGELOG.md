@@ -1,12 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.5.2 - 2026-10-14
 
 ### Added
 
 - Add the example lock of the current version
 
 - The lock of the example records the version of the package it plays
+
 
 ### Changed
 
@@ -60,7 +61,6 @@
 - load_cancelled reads as cancelled once the engine removes the instance
 
 - A task may call the AudHostApi it was posted through until it returns
-
 
 ## 0.4.0 - 2026-10-09
 
