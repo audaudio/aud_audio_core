@@ -130,6 +130,20 @@ enum {
   // The node takes OSC messages as AUD_EVENT_MESSAGE events and answers
   // through AudHostApi.emit_message (osc-002).
   AUD_NODE_CAP_MESSAGES = 1 << 11,
+  // The node passes its events on (ticket 37), e.g. a MIDI thru or a
+  // channel split, with AUD_NODE_CAP_EVENTS and AUD_NODE_CAP_EVENT_OUTPUT:
+  // it hands every note on and note off it takes on within the same
+  // process call, unchanged but for its port - type, offset, flags and
+  // words -, on event outputs of its choice, the note off of a note on
+  // the outputs its note on left on; it sounds nothing and keeps no note
+  // of its own. Other events it may hand on or drop. The nodes behind it
+  // track the notes it hands them, so the engine refuses the node no note
+  // on, and a stop, a prepare or a reset closes no note through it: the
+  // engine closes the notes the node handed out of the graph itself, one
+  // note off on each output a note on left the graph on. A removed node
+  // gets the note offs of the notes it took, to hand them on. An engine
+  // older than the flag ignores it.
+  AUD_NODE_CAP_PASSES_EVENTS = 1 << 12,
 };
 
 // Thread affinity tags. Every function is documented with the thread that

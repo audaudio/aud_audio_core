@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Add AUD_NODE_CAP_PASSES_EVENTS for nodes that pass events on
+- Define the flag in aud_abi.h: the node hands every note on and note off on unchanged but for its port, the note off on the outputs its note on left on; the nodes behind it close the notes it hands them, the engine those it handed out of the graph, one note off on each output
+- Keep the ABI at 0.4: an engine without the flag ignores it
+- Carry the flag as AudNodeCapabilities.passesEvents, in the flags and in the JSON
+- Regenerate the bindings and the ABI constants; document the flag in README.md and README.de.md
+
 ## 0.5.2 - 2026-10-14
 
 ### Added
@@ -61,6 +71,7 @@
 - load_cancelled reads as cancelled once the engine removes the instance
 
 - A task may call the AudHostApi it was posted through until it returns
+
 
 ## 0.4.0 - 2026-10-09
 

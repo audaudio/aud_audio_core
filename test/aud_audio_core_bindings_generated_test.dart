@@ -18,6 +18,7 @@ void main() {
       expect(AUD_PENDING, 1);
       expect(AUD_ERROR_NOT_FOUND, -14);
       expect(AUD_NODE_CAP_RESET_ON_SEEK, 1 << 10);
+      expect(AUD_NODE_CAP_PASSES_EVENTS, 1 << 12);
       expect(AUD_THREAD_OFFLINE, 2);
       expect(AUD_TIME_BEAT, 3);
       expect(AUD_BEAT_FACTOR, 1 << 31);
