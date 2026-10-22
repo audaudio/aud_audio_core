@@ -4,7 +4,7 @@ Kern der Audanika Audio Engine: die C-ABI, Buffer- und Event-Formate, Node-Vertr
 
 Teil der Audanika Audio Engine; geplant in [aud_audio_pm](https://github.com/audaudio/aud_audio_pm).
 
-## Was das Paket enthält (ABI 0.4, Tickets 18, 19 und 25)
+## Was das Paket enthält (ABI 0.4, Tickets 18, 19, 25 und 37)
 
 Header-only C und C++ in `src/`, von jedem Paket der Familie eingebunden
 und nie gelinkt: `aud_abi.h` (die versionierte C-ABI (abi-001) mit
@@ -29,7 +29,13 @@ Fortschritt und Abbruch, Sample-Caches unter dem Budget des Prozesses
 pro Block und `emit_message`; ein Node mit `AUD_NODE_CAP_MESSAGES` nimmt
 OSC-Nachrichten als `AUD_EVENT_MESSAGE`-Events an (`AudMessage`,
 `AudMessageArg`). Die Thread-Tags `[worker]` und `[any thread]` sagen, was
-auf den Workern läuft und was jeder Thread aufrufen darf.
+auf den Workern läuft und was jeder Thread aufrufen darf. Ticket 37
+ergänzt `AUD_NODE_CAP_PASSES_EVENTS` innerhalb von 0.4, da eine Engine
+ohne es das Flag ignoriert: Ein Node damit, etwa ein MIDI-Thru oder ein
+Channel-Split, gibt seine Noten unverändert bis auf ihren Port weiter
+(`AudNodeCapabilities.passesEvents`); die Nodes dahinter schließen sie bei
+einem Stopp oder einem Prepare, und die Engine schließt die, die er aus dem
+Graphen gab, mit je einem Note-Off.
 
 Die native Bibliothek exportiert ABI-Version und Strukturgrößen, die
 Handle-APIs von Filter, Umrechnung, Ramp und Adapter und registriert den

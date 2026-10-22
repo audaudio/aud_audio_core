@@ -4,7 +4,7 @@ Core of the Audanika Audio Engine: the C ABI, buffer and event formats, node con
 
 Part of the Audanika Audio Engine; planned in [aud_audio_pm](https://github.com/audaudio/aud_audio_pm).
 
-## What the package holds (ABI 0.4, tickets 18, 19 and 25)
+## What the package holds (ABI 0.4, tickets 18, 19, 25 and 37)
 
 Header-only C and C++ in `src/`, included by every package of the family
 and never linked:
@@ -29,7 +29,12 @@ and never linked:
   `AUD_NODE_CAP_MESSAGES` takes OSC messages as `AUD_EVENT_MESSAGE` events
   (`AudMessage`, `AudMessageArg`). The thread tags `[worker]` and
   `[any thread]` say what runs on the workers and what every thread may
-  call.
+  call. Ticket 37 adds `AUD_NODE_CAP_PASSES_EVENTS` within 0.4, since an
+  engine without it ignores the flag: a node with it, e.g. a MIDI thru or
+  a channel split, passes its notes on unchanged but for their port
+  (`AudNodeCapabilities.passesEvents`); the nodes behind it close them on
+  a stop or a prepare, and the engine closes those it handed out of the
+  graph, one note off each.
 - `aud_clock.h` — the monotonic host clock.
 - `aud_time_filter.h` — the sample-to-host-time filter with its reset rules.
 - `aud_transport.h` — beat, sample and host time conversions over a snapshot.

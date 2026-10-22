@@ -356,6 +356,7 @@ class AudNodeCapabilities {
     this.resetOnStop = false,
     this.resetOnSeek = false,
     this.messages = false,
+    this.passesEvents = false,
   });
 
   /// The capabilities from the [flags].
@@ -372,6 +373,7 @@ class AudNodeCapabilities {
     resetOnStop: flags & bindings.AUD_NODE_CAP_RESET_ON_STOP != 0,
     resetOnSeek: flags & bindings.AUD_NODE_CAP_RESET_ON_SEEK != 0,
     messages: flags & bindings.AUD_NODE_CAP_MESSAGES != 0,
+    passesEvents: flags & bindings.AUD_NODE_CAP_PASSES_EVENTS != 0,
   );
 
   /// The capabilities from [toJson], a list of names.
@@ -390,6 +392,7 @@ class AudNodeCapabilities {
       resetOnStop: names.contains('resetOnStop'),
       resetOnSeek: names.contains('resetOnSeek'),
       messages: names.contains('messages'),
+      passesEvents: names.contains('passesEvents'),
     );
   }
 
@@ -430,6 +433,10 @@ class AudNodeCapabilities {
   /// The node takes OSC messages and answers them (osc-002).
   final bool messages;
 
+  /// The node passes its events on unchanged but for their port; the
+  /// nodes behind it close the notes it hands them (ticket 37).
+  final bool passesEvents;
+
   /// The `AUD_NODE_CAP_*` flags.
   int get flags =>
       (inPlace ? bindings.AUD_NODE_CAP_IN_PLACE : 0) |
@@ -443,7 +450,8 @@ class AudNodeCapabilities {
       (eventOutput ? bindings.AUD_NODE_CAP_EVENT_OUTPUT : 0) |
       (resetOnStop ? bindings.AUD_NODE_CAP_RESET_ON_STOP : 0) |
       (resetOnSeek ? bindings.AUD_NODE_CAP_RESET_ON_SEEK : 0) |
-      (messages ? bindings.AUD_NODE_CAP_MESSAGES : 0);
+      (messages ? bindings.AUD_NODE_CAP_MESSAGES : 0) |
+      (passesEvents ? bindings.AUD_NODE_CAP_PASSES_EVENTS : 0);
 
   /// The capabilities as JSON: the names of the set ones.
   List<String> toJson() => [
@@ -459,6 +467,7 @@ class AudNodeCapabilities {
     if (resetOnStop) 'resetOnStop',
     if (resetOnSeek) 'resetOnSeek',
     if (messages) 'messages',
+    if (passesEvents) 'passesEvents',
   ];
 
   @override

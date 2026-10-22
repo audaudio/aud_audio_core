@@ -145,8 +145,9 @@ void main() {
         resetOnStop: true,
         resetOnSeek: true,
         messages: true,
+        passesEvents: true,
       );
-      expect(all.flags, (1 << 12) - 1);
+      expect(all.flags, (1 << 13) - 1);
       expect(AudNodeCapabilities.fromFlags(all.flags), all);
       expect(AudNodeCapabilities.fromJson(all.toJson()), all);
       expect(all.toJson(), [
@@ -162,6 +163,7 @@ void main() {
         'resetOnStop',
         'resetOnSeek',
         'messages',
+        'passesEvents',
       ]);
       expect(all.hashCode, all.flags);
       expect(all.toString(), contains('inPlace'));
