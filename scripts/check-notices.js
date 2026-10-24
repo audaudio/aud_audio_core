@@ -19,7 +19,8 @@
 // Exits with 1 and the list of problems when the convention is broken.
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, sep } from 'path';
+import { pathToFileURL } from 'url';
 
 const permissive = [
   'MIT',
@@ -101,7 +102,7 @@ export function checkNotices(repoDir) {
       if (!sourceExtensions.some((ext) => file.endsWith(ext))) continue;
       const head = readFileSync(file, 'utf-8').slice(0, 400);
       if (!head.includes('@license')) {
-        problems.push(`${relative(repoDir, file)} has no license header`);
+        problems.push(`${relative(repoDir, file).split(sep).join('/')} has no license header`);
       }
     }
   }
@@ -120,6 +121,6 @@ function main() {
   process.exit(1);
 }
 
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop())) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }

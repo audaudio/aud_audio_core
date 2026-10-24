@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.4 - 2026-10-24
+
+### Added
+
+- Add a way to define AUD_EXPORT empty
+
+### Changed
+
+- Build and test aud_audio_core on Windows
+
 ## 0.5.3 - 2026-10-22
 
 ### Added
