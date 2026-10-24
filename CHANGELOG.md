@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- Add a way to define AUD_EXPORT empty
+
+A build that links the engine into one binary keeps its C API inside
+
 ### Changed
 
 - Build and test aud_audio_core on Windows

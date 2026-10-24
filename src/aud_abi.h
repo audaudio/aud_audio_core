@@ -46,10 +46,15 @@
 extern "C" {
 #endif
 
+// A build that links the engine and its packages into one binary of its own
+// - the VST3 shell on Windows, whose DLL exports only its entry points
+// (ticket 38) - defines AUD_EXPORT empty.
+#ifndef AUD_EXPORT
 #if _WIN32
 #define AUD_EXPORT __declspec(dllexport)
 #else
 #define AUD_EXPORT __attribute__((visibility("default")))
+#endif
 #endif
 
 // The ABI version. Minor 4 (ticket 25) adds the worker tasks, the loads,
