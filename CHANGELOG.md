@@ -1,12 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.5.4 - 2026-10-24
 
 ### Added
 
 - Add a way to define AUD_EXPORT empty
-
-A build that links the engine into one binary keeps its C API inside
 
 ### Changed
 
@@ -83,7 +81,6 @@ A build that links the engine into one binary keeps its C API inside
 - load_cancelled reads as cancelled once the engine removes the instance
 
 - A task may call the AudHostApi it was posted through until it returns
-
 
 ## 0.4.0 - 2026-10-09
 
