@@ -310,26 +310,19 @@ void main() {
       },
     );
 
-    test(
-      'delivers an event inside a sub-range at its end, and late events at the block end',
-      () {
-        final output = node.process(32, const [
-          AudParamEvent(
-            paramIndex: AudCoreGain.gain,
-            value: 0,
-            sampleOffset: 5,
-          ),
-          AudParamEvent(
-            paramIndex: AudCoreGain.gain,
-            value: 0.25,
-            sampleOffset: 40,
-          ),
-        ])[0];
-        expect(output.sublist(0, 16), everyElement(1));
-        expect(output.sublist(16), everyElement(0));
-        expect(node.process(4, const [])[0], everyElement(0.25));
-      },
-    );
+    test('delivers an event inside a sub-range at its end, and late events at the block end', () {
+      final output = node.process(32, const [
+        AudParamEvent(paramIndex: AudCoreGain.gain, value: 0, sampleOffset: 5),
+        AudParamEvent(
+          paramIndex: AudCoreGain.gain,
+          value: 0.25,
+          sampleOffset: 40,
+        ),
+      ])[0];
+      expect(output.sublist(0, 16), everyElement(1));
+      expect(output.sublist(16), everyElement(0));
+      expect(node.process(4, const [])[0], everyElement(0.25));
+    });
 
     test('ignores other events and unknown parameters', () {
       final output = node.process(8, [
