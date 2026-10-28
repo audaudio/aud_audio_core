@@ -1,10 +1,104 @@
 # aud_audio_core
 
+English | [Deutsch](README.de.md)
+
+[![CI](https://github.com/audaudio/aud_audio_core/actions/workflows/quick_check.yaml/badge.svg)](https://github.com/audaudio/aud_audio_core/actions/workflows/quick_check.yaml)
+
 Core of the Audanika Audio Engine: the C ABI, buffer and event formats, node contracts, timing contract and OSC message model.
 
-Part of the Audanika Audio Engine; planned in [aud_audio_pm](https://github.com/audaudio/aud_audio_pm).
+Part of the Audanika Audio Engine; planned in
+[aud_audio_pm](https://github.com/audaudio/aud_audio_pm). The Dart library
+`aud_audio_core.dart` is platform-neutral and compiles for the web; the
+native parts in `aud_audio_core_ffi.dart` need a native platform.
 
-## What the package holds (ABI 0.4, tickets 18, 19, 25 and 37)
+## Motivation
+
+Every package of the Audanika Audio Engine — the graph, the device IO, the
+MIDI bridge and the DSP nodes — has to agree on the same buffers, events,
+timestamps and node lifecycle. This package holds that contract once:
+
+- As header-only C and C++ in `src/`, included by every package of the
+  family and never linked, so that a node built against the ABI runs in
+  every engine of the same ABI minor
+- As Dart types that mirror the ABI, so that hosts, tools and tests speak
+  the same language as the native code
+- With a versioned ABI: in major 0 the minors must match exactly, from 1.0
+  on an engine accepts older minors
+
+## Installation
+
+The package is not published to pub.dev. Add it as a git dependency,
+resolved by its version tag:
+
+```yaml
+dependencies:
+  aud_audio_core:
+    git:
+      url: git@github.com:audaudio/aud_audio_core.git
+      tag_pattern: "{{version}}"
+    version: ^0.5.4
+```
+
+Then run `dart pub get`. The native library is built by the build hook of
+the package when the app is built.
+
+## Usage
+
+The example in `example/` shows the ABI version of the Dart side and of the
+native core and checks that both agree on the sizes of the ABI structs:
+
+```dart
+import 'package:aud_audio_core/aud_audio_core_ffi.dart';
+
+void main() {
+  // The ABI version the Dart side and the native core were built for
+  print('ABI version (Dart): ${AudAbi.major}.${AudAbi.minor}');
+  print(
+    'ABI version (native): '
+    '${AudAbiNative.nativeMajor}.${AudAbiNative.nativeMinor}',
+  );
+
+  // Both sides must agree on the sizes of the ABI structs
+  final sizesAgree =
+      AudAbiNative.dartStructSizes.toString() ==
+      AudAbiNative.nativeStructSizes.toString();
+  print('Struct sizes agree: $sizesAgree');
+}
+```
+
+It prints:
+
+```text
+ABI version (Dart): 0.4
+ABI version (native): 0.4
+Struct sizes agree: true
+```
+
+## Limitations
+
+- The package holds contracts and helpers, not an engine: rendering,
+  scheduling and transport live in `aud_audio_graph`, the device IO in
+  `aud_audio_io`
+- In major 0 the ABI minors of a node and an engine must match exactly
+- `aud_audio_core_ffi.dart`, the bindings and the reference node
+  `aud.core.gain` need a native platform; only `aud_audio_core.dart`
+  compiles for the web
+- The native library is header-only for its consumers; it exports the ABI
+  version, the struct sizes and the handle APIs of the helpers, nothing
+  else
+
+## Documentation
+
+- [Notices guide](doc/guides/notices-guide.md) — the notices convention
+  that `node scripts/check-notices.js` checks
+- [JSON schema of a node preset](doc/schemas/aud_node_preset.schema.json)
+- [Blog](doc/blog) — one post per change
+- [aud_audio_pm](https://github.com/audaudio/aud_audio_pm) — the plans and
+  decisions of the Audanika Audio Engine
+
+## How it works
+
+### What the package holds (ABI 0.4, tickets 18, 19, 25 and 37)
 
 Header-only C and C++ in `src/`, included by every package of the family
 and never linked:
@@ -48,7 +142,7 @@ The native library exports the ABI version and struct sizes, handle APIs
 of the filter, the conversions, the ramp and the adapter, and registers the
 reference node `aud.core.gain` through `aud_audio_core_register`.
 
-## Dart API
+### Dart API
 
 `aud_audio_core.dart` is platform-neutral and compiles for the web
 (web-001); `aud_audio_core_ffi.dart` adds the native parts: `AudAbiNative`,
@@ -61,6 +155,9 @@ A node with `AudNodeCapabilities.messages` gets the message route
 `AudOscRouter.resolveMessage` finds the `AudMessageTarget`s of an address
 below it and the path that remains, and `AudOscAdapter` turns the message
 into an `AudMessageCommand`.
+
+An overview of the API, with a transport `snapshot` and a node
+`descriptor` from the caller:
 
 ```dart
 import 'package:aud_audio_core/aud_audio_core_ffi.dart';
@@ -96,9 +193,20 @@ preset.validate(descriptor);                        // [] when it fits
 `package:aud_audio_core/aud_audio_core_bindings.dart` exports the raw
 ffigen bindings with the native structs for hosts and node tests.
 
-## Notices
+## Status
 
-`node scripts/check-notices.js` checks the notices convention of
-license-001; see [doc/guides/notices-guide.md](doc/guides/notices-guide.md).
+Version 0.5.4 on ABI 0.4. Before 1.0 — the API and the ABI may change
+between minor versions.
 
-Regenerate the bindings with `dart run ffigen --config ffigen.yaml`.
+## Contributing
+
+- Follow the [develop guide](doc/guides/develop-guide.md), the
+  [code guide](doc/guides/code-guide.md) and the
+  [test guide](doc/guides/test-guide.md)
+- Regenerate the bindings with `dart run ffigen --config ffigen.yaml`
+- Check the notices convention with `node scripts/check-notices.js`, see
+  the [notices guide](doc/guides/notices-guide.md)
+
+## License
+
+MIT — see [LICENSE](LICENSE).

@@ -671,20 +671,18 @@ final class AudCoreParamRamp extends ffi.Opaque {}
 /// Renders one fixed block of `block_size` frames from `in` to `out`.
 typedef AudCoreRenderBlockFunction =
     ffi.Pointer<ffi.NativeFunction<AudCoreRenderBlockFunctionFunction>>;
-typedef AudCoreRenderBlockFunctionFunction =
-    ffi.Void Function(
-      ffi.Pointer<ffi.Void> user,
-      ffi.Pointer<ffi.Pointer<ffi.Float>> in$,
-      ffi.Pointer<ffi.Pointer<ffi.Float>> out,
-      ffi.Uint32 block_size,
-    );
-typedef DartAudCoreRenderBlockFunctionFunction =
-    void Function(
-      ffi.Pointer<ffi.Void> user,
-      ffi.Pointer<ffi.Pointer<ffi.Float>> in$,
-      ffi.Pointer<ffi.Pointer<ffi.Float>> out,
-      int block_size,
-    );
+typedef AudCoreRenderBlockFunctionFunction = ffi.Void Function(
+  ffi.Pointer<ffi.Void> user,
+  ffi.Pointer<ffi.Pointer<ffi.Float>> in$,
+  ffi.Pointer<ffi.Pointer<ffi.Float>> out,
+  ffi.Uint32 block_size,
+);
+typedef DartAudCoreRenderBlockFunctionFunction = void Function(
+  ffi.Pointer<ffi.Void> user,
+  ffi.Pointer<ffi.Pointer<ffi.Float>> in$,
+  ffi.Pointer<ffi.Pointer<ffi.Float>> out,
+  int block_size,
+);
 
 /// ............................................................................
 /// The time filter (aud_time_filter.h)
@@ -1791,26 +1789,26 @@ final class AudProcessContext extends ffi.Struct {
 /// as `int32_t aud_<package>_register(const AudHostApi* host)`.
 typedef AudRegisterFunction =
     ffi.Pointer<ffi.NativeFunction<AudRegisterFunctionFunction>>;
-typedef AudRegisterFunctionFunction =
-    ffi.Int32 Function(ffi.Pointer<AudHostApi> host);
-typedef DartAudRegisterFunctionFunction =
-    int Function(ffi.Pointer<AudHostApi> host);
+typedef AudRegisterFunctionFunction = ffi.Int32 Function(
+  ffi.Pointer<AudHostApi> host,
+);
+typedef DartAudRegisterFunctionFunction = int Function(
+  ffi.Pointer<AudHostApi> host,
+);
 
 /// [realtime] The render interface between a host of the engine and the
 /// engine: aud_audio_io calls it from its stream callback, the plugin shells
 /// from the host's process call, the offline renderer from its loop.
 typedef AudRenderFunction =
     ffi.Pointer<ffi.NativeFunction<AudRenderFunctionFunction>>;
-typedef AudRenderFunctionFunction =
-    ffi.Int32 Function(
-      ffi.Pointer<ffi.Void> user,
-      ffi.Pointer<AudRenderRequest> request,
-    );
-typedef DartAudRenderFunctionFunction =
-    int Function(
-      ffi.Pointer<ffi.Void> user,
-      ffi.Pointer<AudRenderRequest> request,
-    );
+typedef AudRenderFunctionFunction = ffi.Int32 Function(
+  ffi.Pointer<ffi.Void> user,
+  ffi.Pointer<AudRenderRequest> request,
+);
+typedef DartAudRenderFunctionFunction = int Function(
+  ffi.Pointer<ffi.Void> user,
+  ffi.Pointer<AudRenderRequest> request,
+);
 
 /// What a host of the engine hands to one render call (plugin-002): the
 /// buses it supplies, the stream time of the block, the events of the block

@@ -12,8 +12,10 @@ import 'package:ffi/ffi.dart';
 import 'aud_audio_core_bindings_generated.dart' as bindings;
 
 /// Renders one fixed block from [input] to [output], one list per channel.
-typedef AudRenderBlock =
-    void Function(List<Float32List> input, List<Float32List> output);
+typedef AudRenderBlock = void Function(
+  List<Float32List> input,
+  List<Float32List> output,
+);
 
 // #############################################################################
 /// The fixed-block adapter of decision graph-002,
