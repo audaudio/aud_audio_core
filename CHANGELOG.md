@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Resolve the example together with the package
+
+- Add the example to a pub workspace, resolution: workspace in the example
+- Drop the lock file of the example, the package lock covers it
+- Keep test within the test_api that flutter_test pins
+
 ## 0.6.0 - 2026-10-28
 
 ### Changed
@@ -25,6 +35,7 @@
 - Upgrade the dependencies published since the first pass
 
 - Lift the lock file to the newest resolvable versions
+
 
 ## 0.5.4 - 2026-10-24
 
@@ -107,6 +118,7 @@
 - load_cancelled reads as cancelled once the engine removes the instance
 
 - A task may call the AudHostApi it was posted through until it returns
+
 
 ## 0.4.0 - 2026-10-09
 
