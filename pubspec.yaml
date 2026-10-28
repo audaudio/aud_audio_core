@@ -1,12 +1,17 @@
 name: aud_audio_core
 description: "Core of the Audanika Audio Engine: the C ABI, buffer and event formats, node contracts, timing contract and OSC message model"
-version: 0.6.0
+version: 0.6.1
 publish_to: none
 homepage: https://github.com/audaudio/aud_audio_core
 repository: https://github.com/audaudio/aud_audio_core
 
 environment:
   sdk: ^3.13.0
+
+# The example resolves together with the package, so that upgrading the
+# package upgrades the example too.
+workspace:
+  - example
 
 dependencies:
   ffi: ^2.2.0
@@ -21,4 +26,5 @@ dev_dependencies:
   ffigen: ^23.0.0
   flutter_lints: ^6.0.0
   helix: ^1.14.0
-  test: ^1.33.0
+  # Within the test_api that flutter_test of the example pins.
+  test: ^1.31.1
